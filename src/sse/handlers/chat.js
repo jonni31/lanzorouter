@@ -1,9 +1,11 @@
 import "open-sse/index.js";
 
 import {
-  getProviderCredentials,
-  markAccountUnavailable,
   clearAccountError,
+  markAccountUnavailable,
+} from "@/lib/accountRotation.js";
+import { detectErrorPattern, applyAutoFix, logAutoFix } from "@/lib/autoFix.js";
+import {
   extractApiKey,
   isValidApiKey,
 } from "../services/auth.js";
@@ -254,6 +256,22 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
     });
 
     if (result.success) return result.response;
+
+    // Auto-fix: detect error pattern and apply fix if enabled
+    const errorPattern = detectErrorPattern(result.status, result.error, provider);
+    if (errorPattern) {
+      const fixResult = await applyAutoFix(errorPattern, credentials, provider);
+      logAutoFix(provider, credentials.connectionId, errorPattern, fixResult);
+      
+      if (fixResult.shouldRetry && fixResult.waitMs > 0) {
+        log.info("AUTO-FIX", `Waiting ${fixResult.waitMs}ms before retry: ${fixResult.description}`);
+        await new Promise(resolve => setTimeout(resolve, fixResult.waitMs));
+        // Don't exclude this connection yet - let it retry
+        lastError = result.error;
+        lastStatus = result.status;
+        continue;
+      }
+    }
 
     // Mark account unavailable (auto-calculates cooldown with exponential backoff, or precise resetsAtMs)
     const { shouldFallback } = await markAccountUnavailable(credentials.connectionId, result.status, result.error, provider, model, result.resetsAtMs);
