@@ -190,6 +190,11 @@ export default function ConnectionRow({ connection, proxyPools, isOAuth, isFirst
             {connection.globalPriority && (
               <span className="text-xs text-text-muted">Auto: {connection.globalPriority}</span>
             )}
+            {connection.providerSpecificData?.maxTokens && (
+              <Badge variant="default" size="sm">
+                Max: {connection.providerSpecificData.maxTokens}
+              </Badge>
+            )}
             {getOneByOneLabel() && (
               <Badge variant={getOneByOneVariant()} size="sm">
                 {getOneByOneLabel()}
