@@ -21,8 +21,8 @@ const DEFAULT_PASSWORD = "123456";
 // Resolve db.json path (matches app/src/lib/dataDir.js convention)
 function getDbPath() {
   return process.platform === "win32"
-    ? path.join(process.env.APPDATA || "", "zevai", "db.json")
-    : path.join(os.homedir(), ".zevai", "db.json");
+    ? path.join(process.env.APPDATA || "", "lanzo", "db.json")
+    : path.join(os.homedir(), ".lanzo", "db.json");
 }
 
 /**

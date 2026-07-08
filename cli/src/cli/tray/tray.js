@@ -58,7 +58,7 @@ function initTray(options) {
  */
 function buildMenuItems(port, autostartEnabled) {
   return [
-    { title: `ZevaiRouter (Port ${port})`, tooltip: "Server is running", enabled: false },
+    { title: `LanzoRouter (Port ${port})`, tooltip: "Server is running", enabled: false },
     { title: "Open Dashboard", tooltip: "Open in browser", enabled: true },
     {
       title: autostartEnabled ? "✓ Auto-start Enabled" : "Enable Auto-start",
@@ -121,7 +121,7 @@ function initWindowsTray(options) {
 
     trayInstance = initWinTray({
       iconPath,
-      tooltip: `ZevaiRouter - Port ${port}`,
+      tooltip: `LanzoRouter - Port ${port}`,
       items,
       onClick: (index) => {
         handleClick(index, options, (newEnabled) => {
@@ -204,7 +204,7 @@ function initUnixTray(options) {
       // because template mode only uses the alpha channel.
       isTemplateIcon: false,
       title: "",
-      tooltip: `ZevaiRouter - Port ${port}`,
+      tooltip: `LanzoRouter - Port ${port}`,
       items
     };
 

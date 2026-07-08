@@ -585,7 +585,7 @@ async function showCliToolsMenu(port, breadcrumb = []) {
   await showMenuWithBack({
     title: "🔧 CLI Tools",
     breadcrumb,
-    headerContent: `Configure CLI tools to use ZevaiRouter\nEndpoint: ${endpoint}`,
+    headerContent: `Configure CLI tools to use LanzoRouter\nEndpoint: ${endpoint}`,
     items: [
       {
         label: "Claude Code",

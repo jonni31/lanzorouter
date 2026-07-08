@@ -30,7 +30,7 @@ const DEFAULT_WORDS = [
   "claude-code",
   "kilo code",
   "kilocode",
-  "zevairouter",
+  "lanzorouter",
   "9router",
 ];
 

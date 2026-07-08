@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "path";
 import os from "os";
 
-const APP_NAME = "zevai";
+const APP_NAME = "lanzo";
 
 function defaultDir() {
   if (process.platform === "win32") {

@@ -15,7 +15,7 @@ const DEFAULT_CONFIG = {
 
 const CLI_TOKEN_HEADER = "x-9r-cli-token";
 const CLI_TOKEN_SALT = "9r-cli-auth";
-const APP_NAME = "zevai";
+const APP_NAME = "lanzo";
 
 function getDataDir() {
   if (process.env.DATA_DIR) return process.env.DATA_DIR;

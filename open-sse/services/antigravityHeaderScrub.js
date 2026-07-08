@@ -58,7 +58,7 @@ export function scrubProxyAndFingerprintHeaders(headers) {
   let authorizationValue;
   for (const [key, value] of Object.entries(headers || {})) {
     const lowerKey = key.toLowerCase();
-    if (lowerKey.startsWith("x-zevai-") || HEADERS_TO_REMOVE.has(lowerKey)) {
+    if (lowerKey.startsWith("x-lanzo-") || HEADERS_TO_REMOVE.has(lowerKey)) {
       continue;
     }
     if (lowerKey === "authorization") {

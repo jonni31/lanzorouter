@@ -101,11 +101,11 @@ PORT=1997 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://<your-host-or-domain>:199
 ## 🐳 Docker
 
 ```bash
-docker build -t zevairouter .
+docker build -t lanzorouter .
 docker run -d -p 1997:1997 \
   -e JWT_SECRET="replace-with-a-random-string" \
   -e INITIAL_PASSWORD="your-password" \
-  --name zevairouter zevairouter
+  --name lanzorouter lanzorouter
 ```
 
 更多详情请参见 [DOCKER.md](DOCKER.md)。

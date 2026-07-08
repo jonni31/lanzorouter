@@ -13,7 +13,7 @@ export const LEGACY_FILES = {
   details: path.join(DATA_DIR, "request-details.json"),
 };
 export function ensureDirs() {
-  // First-touch: migrate legacy ~/.zevai → ~/.zevai before creating dirs.
+  // First-touch: migrate legacy ~/.lanzo → ~/.lanzo before creating dirs.
   migrateLegacyDataDir(DATA_DIR);
   for (const dir of [DATA_DIR, DB_DIR, BACKUPS_DIR]) {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });

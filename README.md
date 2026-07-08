@@ -10,14 +10,14 @@ LanzoRouter is a self-hosted AI gateway that puts **15+ AI providers behind a si
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-38BDF8?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![Node](https://img.shields.io/badge/Node-%E2%89%A520-339933?logo=node.js&logoColor=white)](https://nodejs.org)
-[![npm](https://img.shields.io/npm/v/zevairouter?logo=npm&color=CB3837)](https://www.npmjs.com/package/zevairouter)
+[![npm](https://img.shields.io/npm/v/lanzorouter?logo=npm&color=CB3837)](https://www.npmjs.com/package/lanzorouter)
 [![License](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
 
 ```bash
 npx lanzorouter
 ```
 
-> **Note:** LanzoRouter is a fork of ZevaiRouter with enhanced features and custom branding.
+> **Note:** LanzoRouter is a fork of LanzoRouter with enhanced features and custom branding.
 
 </div>
 
@@ -101,23 +101,23 @@ The fastest way to run LanzoRouter is straight from npm — no build step:
 
 ```bash
 # Try it instantly (no install)
-npx zevairouter
+npx lanzorouter
 
 # …or install globally
-npm install -g zevairouter
-zevai
+npm install -g lanzorouter
+lanzo
 ```
 
 The dashboard opens automatically at **`http://localhost:1997`**. Useful flags:
 
 ```bash
-zevai --port 3000       # custom port
-zevai --no-browser      # don't open the browser
-zevai --tray            # run in the system tray
-zevai --help            # see all options
+lanzo --port 3000       # custom port
+lanzo --no-browser      # don't open the browser
+lanzo --tray            # run in the system tray
+lanzo --help            # see all options
 ```
 
-Data (accounts, settings, usage) is stored under `~/.zevai` (`%APPDATA%/zevai` on Windows). On first run, LanzoRouter auto-migrates an existing `~/.9router` data dir so your accounts carry over.
+Data (accounts, settings, usage) is stored under `~/.lanzo` (`%APPDATA%/lanzo` on Windows). On first run, LanzoRouter auto-migrates an existing `~/.9router` data dir so your accounts carry over.
 
 ### Prerequisites
 
@@ -205,7 +205,7 @@ PORT=1997 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://<your-host-or-domain>:199
 There's also a one-line VPS installer (Ubuntu/Debian, sets up a systemd service):
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/Verifiedlabs/zevairouter/main/vps-setup.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/jonni31/lanzorouter/main/vps-setup.sh)
 ```
 
 ## ⚙️ Configuration (`.env`)
@@ -226,11 +226,11 @@ See `.env.example` for the full list.
 ## 🐳 Docker
 
 ```bash
-docker build -t zevairouter .
+docker build -t lanzorouter .
 docker run -d -p 1997:1997 \
   -e JWT_SECRET="replace-with-a-random-string" \
   -e INITIAL_PASSWORD="your-password" \
-  --name zevairouter zevairouter
+  --name lanzorouter lanzorouter
 ```
 
 See [DOCKER.md](DOCKER.md) for more detail.
@@ -250,7 +250,7 @@ Released under the **MIT** License — see [LICENSE](LICENSE).
 
 <div align="center">
 
-**[⬆ back to top](#zevairouter)**
+**[⬆ back to top](#lanzorouter)**
 
 If LanzoRouter saves you time, consider starring the repo ⭐
 

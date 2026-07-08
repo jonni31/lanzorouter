@@ -23,8 +23,8 @@ function hasSystray() {
 // On Windows it was an AV false-positive risk; on macOS/Linux its bundled
 // binary is broken on modern OS versions.
 function cleanupLegacySystray({ silent = false } = {}) {
-  // 1) Runtime dir: ~/.zevai/runtime/node_modules/systray (or %APPDATA% on Win)
-  // 2) npm global nested: <npm_prefix>/node_modules/zevairouter/node_modules/systray
+  // 1) Runtime dir: ~/.lanzo/runtime/node_modules/systray (or %APPDATA% on Win)
+  // 2) npm global nested: <npm_prefix>/node_modules/lanzorouter/node_modules/systray
   //    __dirname here = <pkg root>/hooks → up 1 = pkg root
   const targets = [
     path.join(getRuntimeNodeModules(), LEGACY_SYSTRAY_PKG),
@@ -34,9 +34,9 @@ function cleanupLegacySystray({ silent = false } = {}) {
     if (fs.existsSync(dir)) {
       try {
         fs.rmSync(dir, { recursive: true, force: true });
-        if (!silent) console.log(`[zevai][runtime] removed legacy systray: ${dir}`);
+        if (!silent) console.log(`[lanzo][runtime] removed legacy systray: ${dir}`);
       } catch (e) {
-        if (!silent) console.warn(`[zevai][runtime] failed to remove ${dir}: ${e.message}`);
+        if (!silent) console.warn(`[lanzo][runtime] failed to remove ${dir}: ${e.message}`);
       }
     }
   }
@@ -53,7 +53,7 @@ function chmodSystrayBin({ silent = false } = {}) {
   try {
     fs.chmodSync(binPath, 0o755);
   } catch (e) {
-    if (!silent) console.warn(`[zevai][runtime] chmod tray bin failed: ${e.message}`);
+    if (!silent) console.warn(`[lanzo][runtime] chmod tray bin failed: ${e.message}`);
   }
 }
 
@@ -63,7 +63,7 @@ function ensureRuntimeDir() {
   const pkgPath = path.join(dir, "package.json");
   if (!fs.existsSync(pkgPath)) {
     fs.writeFileSync(pkgPath, JSON.stringify({
-      name: "zevai-runtime",
+      name: "lanzo-runtime",
       version: "1.0.0",
       private: true
     }, null, 2));

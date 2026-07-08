@@ -4,13 +4,13 @@
 //
 // NOTE: APP_NAME here MUST stay in sync with src/lib/dataDir.js (ESM). This
 // CommonJS copy exists because cli/ can't import the ESM src/ module at
-// runtime. Both resolve to ~/.zevai (or %APPDATA%/zevai on Windows).
+// runtime. Both resolve to ~/.lanzo (or %APPDATA%/lanzo on Windows).
 const { execSync, spawnSync } = require("child_process");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
 
-const APP_NAME = "zevai";
+const APP_NAME = "lanzo";
 const BETTER_SQLITE3_VERSION = "12.6.2";
 
 function getDataDir() {
@@ -36,10 +36,10 @@ function ensureRuntimeDir() {
   const pkgPath = path.join(dir, "package.json");
   if (!fs.existsSync(pkgPath)) {
     fs.writeFileSync(pkgPath, JSON.stringify({
-      name: "zevai-runtime",
+      name: "lanzo-runtime",
       version: "1.0.0",
       private: true,
-      description: "User-writable runtime deps for ZevaiRouter (better-sqlite3 native binary)",
+      description: "User-writable runtime deps for LanzoRouter (better-sqlite3 native binary)",
     }, null, 2));
   }
   return dir;

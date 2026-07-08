@@ -1,7 +1,7 @@
 {
   "name": "lanzorouter",
   "version": "1.0.0",
-  "description": "LanzoRouter - AI Router with provider automation, multi-account workflows, and quota tracking (forked from ZevaiRouter)",
+  "description": "LanzoRouter - AI Router with provider automation, multi-account workflows, and quota tracking (forked from LanzoRouter)",
   "bin": {
     "lanzo": "./cli/cli.js",
     "lanzorouter": "./cli/cli.js"
@@ -93,8 +93,8 @@
     "node": ">=22.5.0"
   },
   "keywords": [
-    "zevairouter",
-    "zevai",
+    "lanzorouter",
+    "lanzo",
     "ai",
     "router",
     "proxy",
@@ -109,7 +109,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Verifiedlabs/zevairouter"
+    "url": "https://github.com/jonni31/lanzorouter"
   },
-  "homepage": "https://github.com/Verifiedlabs/zevairouter"
+  "homepage": "https://github.com/jonni31/lanzorouter"
 }

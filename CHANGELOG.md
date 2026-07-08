@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2026-07-08
 
 ### Added
-- Initial fork from ZevaiRouter
+- Initial fork from LanzoRouter
 - Comprehensive `.env.example` with all OAuth credentials
 - GitHub Actions CI workflow (Node 20.x, 22.x)
 - Quick Start guide in README
@@ -17,10 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CLI commands: `lanzo` and `lanzorouter`
 
 ### Changed
-- Rebranded from ZevaiRouter to LanzoRouter
+- Rebranded from LanzoRouter to LanzoRouter
 - All OAuth secrets moved to environment variables
-- Package name: `zevairouter` → `lanzorouter`
-- CLI package: `zevairouter-cli` → `lanzorouter-cli`
+- Package name: `lanzorouter` → `lanzorouter`
+- CLI package: `lanzorouter-cli` → `lanzorouter-cli`
 - Clean git history (secrets sanitized)
 
 ### Removed
@@ -34,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## Legacy (ZevaiRouter)
+## Legacy (LanzoRouter)
 
-This project was forked from ZevaiRouter v1.0.35 with permission.
-For ZevaiRouter's original changelog, see upstream repository.
+This project was forked from LanzoRouter v1.0.35 with permission.
+For LanzoRouter's original changelog, see upstream repository.

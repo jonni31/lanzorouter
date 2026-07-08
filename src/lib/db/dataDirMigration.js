@@ -2,60 +2,63 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 
-// Legacy data dir from the upstream 9router fork. We auto-migrate its contents
-// into the new ~/.zevai data dir on first run so existing accounts/connections
-// are preserved. This module is intentionally self-contained (no imports from
-// dataDir.js) because cli/ (CommonJS) and src/ (ESM) both need the same logic.
-const LEGACY_APP_NAME = "9router";
-const MIGRATED_MARKER = ".migrated-from-9router";
+// Legacy data dirs from upstream forks. We auto-migrate contents into the new
+// ~/.lanzo data dir on first run so existing accounts/connections are preserved.
+// This module is intentionally self-contained (no imports from dataDir.js)
+// because cli/ (CommonJS) and src/ (ESM) both need the same logic.
+//
+// Migration order: try ~/.zevai first (most recent), then ~/.9router (oldest).
+const LEGACY_SOURCES = [
+  { appName: "zevai", marker: ".migrated-from-zevai" },
+  { appName: "9router", marker: ".migrated-from-9router" },
+];
 
-function legacyDefaultDir() {
+function legacyDir(appName) {
   if (process.platform === "win32") {
-    return path.join(process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming"), LEGACY_APP_NAME);
+    return path.join(process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming"), appName);
   }
-  return path.join(os.homedir(), `.${LEGACY_APP_NAME}`);
+  return path.join(os.homedir(), `.${appName}`);
 }
 
 /**
- * One-time migration of the legacy ~/.zevai data dir into the new data dir
- * (~/.zevai on macOS/Linux, %APPDATA%/zevai on Windows). Copies recursively
- * and leaves the legacy dir intact as a backup. Idempotent via a marker file.
+ * One-time migration of legacy data dirs into the new ~/.lanzo data dir.
+ * Tries ~/.zevai first, then ~/.9router. Copies recursively and leaves the
+ * legacy dir intact as a backup. Idempotent via marker files.
  * Safe to call on every boot — no-ops once migrated or on fresh installs.
  *
  * @param {string} newDataDir - resolved new data dir (from dataDir.js getDataDir)
  */
 export function migrateLegacyDataDir(newDataDir) {
   if (!newDataDir) return;
-
-  // Already migrated, or user is explicitly using DATA_DIR env override that
-  // points elsewhere — don't touch.
-  const marker = path.join(newDataDir, MIGRATED_MARKER);
-  if (fs.existsSync(marker)) return;
   if (process.env.DATA_DIR && process.env.DATA_DIR !== newDataDir) return;
 
-  const legacyDir = legacyDefaultDir();
-  if (!fs.existsSync(legacyDir)) return;
+  for (const { appName, marker: markerName } of LEGACY_SOURCES) {
+    const markerPath = path.join(newDataDir, markerName);
 
-  // If new dir already has real content (e.g. user started fresh before
-  // migration ran), don't clobber — just stamp the marker and move on.
-  const newExists = fs.existsSync(newDataDir);
-  if (newExists) {
+    // Already migrated from this source — skip.
+    if (fs.existsSync(markerPath)) continue;
+
+    const srcDir = legacyDir(appName);
+    if (!fs.existsSync(srcDir)) continue;
+
+    // If new dir already has real content, don't clobber — just stamp marker.
+    if (fs.existsSync(newDataDir)) {
+      try {
+        fs.mkdirSync(newDataDir, { recursive: true });
+        fs.writeFileSync(markerPath, new Date().toISOString());
+      } catch {}
+      continue;
+    }
+
     try {
-      // Stamp marker so we don't keep checking; legacy dir left as backup.
-      fs.mkdirSync(newDataDir, { recursive: true });
-      fs.writeFileSync(marker, new Date().toISOString());
-    } catch {}
-    return;
-  }
-
-  try {
-    console.log(`[migrate] Copying legacy data ${legacyDir} → ${newDataDir}`);
-    fs.mkdirSync(path.dirname(newDataDir), { recursive: true });
-    fs.cpSync(legacyDir, newDataDir, { recursive: true });
-    fs.writeFileSync(marker, new Date().toISOString());
-    console.log(`[migrate] Done. Legacy data kept at ${legacyDir} as backup.`);
-  } catch (err) {
-    // Never crash the app over migration — fall back to a fresh data dir.
-    console.warn(`[migrate] Failed to migrate ${legacyDir} → ${newDataDir}: ${err.message}. Starting fresh.`);
+      console.log(`[migrate] Copying legacy data ${srcDir} → ${newDataDir}`);
+      fs.mkdirSync(path.dirname(newDataDir), { recursive: true });
+      fs.cpSync(srcDir, newDataDir, { recursive: true });
+      fs.writeFileSync(markerPath, new Date().toISOString());
+      console.log(`[migrate] Done. Legacy data kept at ${srcDir} as backup.`);
+      return; // Successfully migrated from one source — done.
+    } catch (err) {
+      console.warn(`[migrate] Failed to migrate ${srcDir} → ${newDataDir}: ${err.message}. Trying next source.`);
+    }
   }
 }

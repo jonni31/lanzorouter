@@ -2,21 +2,21 @@ import pkg from "../../../package.json" with { type: "json" };
 
 // App configuration
 export const APP_CONFIG = {
-  name: "ZevaiRouter",
+  name: "LanzoRouter",
   description: "AI Infrastructure Management",
   version: pkg.version,
 };
 
 // GitHub configuration
 export const GITHUB_CONFIG = {
-  changelogUrl: "https://raw.githubusercontent.com/Verifiedlabs/zevairouter/refs/heads/main/CHANGELOG.md",
+  changelogUrl: "https://raw.githubusercontent.com/jonni31/lanzorouter/refs/heads/main/CHANGELOG.md",
 };
 
 // Updater configuration
 export const UPDATER_CONFIG = {
-  npmPackageName: "zevairouter",
-  installCmd: "npm i -g zevairouter",
-  installCmdLatest: "npm i -g zevairouter@latest --prefer-online",
+  npmPackageName: "lanzorouter",
+  installCmd: "npm i -g lanzorouter",
+  installCmdLatest: "npm i -g lanzorouter@latest --prefer-online",
   shutdownCountdownSec: 3,
   exitDelayMs: 500,
   statusPort: 20129,
