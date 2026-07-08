@@ -22,11 +22,15 @@ echo "[2/4] Pulling on VPS..."
 ssh $VPS_HOST "cd $VPS_DIR && git pull origin master"
 
 # 3. Build on VPS
-echo "[3/4] Building on VPS (this takes ~1-2 min)..."
+echo "[3/5] Building on VPS (this takes ~1-2 min)..."
 ssh $VPS_HOST "cd $VPS_DIR && npm run build 2>&1 | tail -5"
 
-# 4. Restart PM2
-echo "[4/4] Restarting PM2..."
+# 4. Recreate symlinks (standalone build wipes them)
+echo "[4/5] Fixing standalone symlinks..."
+ssh $VPS_HOST "cd $VPS_DIR && ln -sfn $VPS_DIR/.next/static $VPS_DIR/.next/standalone/.next/static && ln -sfn $VPS_DIR/public $VPS_DIR/.next/standalone/public && for pkg in playwright playwright-core; do ln -sfn $VPS_DIR/node_modules/\$pkg $VPS_DIR/.next/standalone/node_modules/\$pkg 2>/dev/null; done"
+
+# 5. Restart PM2
+echo "[5/5] Restarting PM2..."
 ssh $VPS_HOST "cd $VPS_DIR && pm2 restart lanzorouter"
 
 echo ""
