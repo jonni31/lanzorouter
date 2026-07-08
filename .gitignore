@@ -1,0 +1,4 @@
+node_modules/
+cli/app/.next-cli-build/
+.next/
+build/
