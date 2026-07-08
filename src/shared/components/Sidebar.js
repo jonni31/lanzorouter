@@ -120,9 +120,8 @@ export default function Sidebar({ onClose }) {
           <Link href="/dashboard" className="flex items-center gap-3">
             <div className="flex items-center justify-center size-9 rounded-[10px] bg-gradient-to-br from-brand-500 to-brand-700 shadow-[var(--shadow-warm)]">
               <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5">
-                <path d="M9.5 11H22.5L9.5 21H22.5" fill="none" stroke="white" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"/>
-                <circle cx="9.5" cy="11" r="2.5" fill="white"/>
-                <circle cx="22.5" cy="21" r="2.5" fill="white"/>
+                <path d="M7 9V22H13" fill="none" stroke="white" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M18 9H25L18 22H25" fill="none" stroke="white" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
             <div className="flex flex-col">

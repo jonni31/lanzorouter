@@ -9,7 +9,10 @@ export default function Footer() {
           <div className="col-span-2 lg:col-span-2">
             <div className="flex items-center gap-3 mb-6">
               <div className="size-6 rounded bg-[#f97815] flex items-center justify-center text-white">
-                <span className="material-symbols-outlined text-[16px]">hub</span>
+                <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-4 h-4">
+                  <path d="M7 9V22H13" fill="none" stroke="white" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M18 9H25L18 22H25" fill="none" stroke="white" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </div>
               <h3 className="text-white text-lg font-bold">LanzoRouter</h3>
             </div>

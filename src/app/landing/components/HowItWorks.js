@@ -31,7 +31,10 @@ export default function HowItWorks() {
           {/* Step 2: LanzoRouter Hub */}
           <div className="flex flex-col gap-6 relative group md:items-center md:text-center">
             <div className="w-24 h-24 rounded-2xl bg-[#181411] border-2 border-[#f97815] flex items-center justify-center shadow-[0_0_30px_rgba(249,120,21,0.2)] z-10 mx-auto">
-              <span className="material-symbols-outlined text-4xl text-[#f97815] animate-pulse">hub</span>
+              <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 animate-pulse">
+                <path d="M7 9V22H13" fill="none" stroke="#f97815" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M18 9H25L18 22H25" fill="none" stroke="#f97815" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </div>
             <div>
               <h3 className="text-xl font-bold mb-2 text-[#f97815]">2. LanzoRouter Hub</h3>
