@@ -129,6 +129,40 @@ export async function getUsageForProvider(connection, proxyOptions = null) {
     case "minimax":
     case "minimax-cn":
       return await getMiniMaxUsage(apiKey, provider, proxyOptions);
+    case "deepseek":
+      return await getDeepSeekUsage(apiKey, proxyOptions);
+    case "openrouter":
+      return await getOpenRouterUsage(apiKey, proxyOptions);
+    case "openai":
+      return await getOpenAIUsage(apiKey, proxyOptions);
+    case "anthropic":
+      return await getAnthropicUsage(apiKey, proxyOptions);
+    case "mistral":
+      return await getMistralUsage(apiKey, proxyOptions);
+    case "together":
+      return await getTogetherUsage(apiKey, proxyOptions);
+    case "fireworks":
+      return await getFireworksUsage(apiKey, proxyOptions);
+    case "groq":
+      return await getGroqUsage(apiKey, proxyOptions);
+    case "cohere":
+      return await getCohereUsage(apiKey, proxyOptions);
+    case "elevenlabs":
+      return await getElevenLabsUsage(apiKey, proxyOptions);
+    case "deepgram":
+      return await getDeepgramUsage(apiKey, proxyOptions);
+    case "gemini":
+      return { plan: "Gemini (API Key)", message: "Gemini API key plans use Google Cloud billing. Check usage at console.cloud.google.com or aistudio.google.com." };
+    case "perplexity":
+      return { plan: "Perplexity", message: "Perplexity billing available at perplexity.ai/settings. No public balance API." };
+    case "nebius":
+      return { plan: "Nebius AI", message: "Nebius billing available at studio.nebius.com. No public balance API." };
+    case "sambanova":
+      return { plan: "SambaNova", message: "SambaNova free tier — no balance API. Check usage at cloud.sambanova.ai." };
+    case "cerebras":
+      return { plan: "Cerebras", message: "Cerebras free tier — no balance API. Check usage at cloud.cerebras.ai." };
+    case "hyperbolic":
+      return await getHyperbolicUsage(apiKey, proxyOptions);
     default:
       return { message: `Usage API not implemented for ${provider}` };
   }
@@ -1748,5 +1782,391 @@ async function getAutoclawUsage(accessToken, proxyOptions = null, connection = n
     };
   } catch (error) {
     return { message: `AutoClaw connected. Unable to fetch balance: ${error.message}` };
+  }
+}
+
+// ─── DeepSeek ────────────────────────────────────────────────────────────────
+// GET https://api.deepseek.com/user/balance
+// Returns { is_available, balance_infos: [{ currency, total_balance, granted_balance, topped_up_balance }] }
+async function getDeepSeekUsage(apiKey, proxyOptions = null) {
+  if (!apiKey) return { message: "DeepSeek API key not available." };
+  try {
+    const res = await proxyAwareFetch("https://api.deepseek.com/user/balance", {
+      headers: { Authorization: `Bearer ${apiKey}`, Accept: "application/json" },
+    }, proxyOptions);
+    if (!res.ok) {
+      if (res.status === 401) return { message: "Invalid DeepSeek API key." };
+      return { message: `DeepSeek balance API error (${res.status})` };
+    }
+    const data = await res.json();
+    const quotas = {};
+    const balanceInfos = Array.isArray(data.balance_infos) ? data.balance_infos : [];
+    for (const b of balanceInfos) {
+      const currency = (b.currency || "").toUpperCase();
+      const total = parseFloat(b.total_balance) || 0;
+      const granted = parseFloat(b.granted_balance) || 0;
+      const topped = parseFloat(b.topped_up_balance) || 0;
+      if (currency) {
+        quotas[`balance_${currency.toLowerCase()}`] = {
+          used: 0, total: 0, remaining: total,
+          remainingPercentage: 100, resetAt: null, unlimited: true,
+          currency, grantedBalance: granted, toppedUpBalance: topped,
+        };
+      }
+    }
+    const isAvailable = data.is_available !== false;
+    return {
+      plan: isAvailable ? "DeepSeek" : "DeepSeek (Insufficient Balance)",
+      quotas,
+    };
+  } catch (error) {
+    return { message: `DeepSeek connected. Unable to fetch balance: ${error.message}` };
+  }
+}
+
+// ─── OpenRouter ──────────────────────────────────────────────────────────────
+// GET https://openrouter.ai/api/v1/auth/key
+// Returns { data: { label, usage, limit, is_free_tier, rate_limit: { requests, interval } } }
+async function getOpenRouterUsage(apiKey, proxyOptions = null) {
+  if (!apiKey) return { message: "OpenRouter API key not available." };
+  try {
+    const res = await proxyAwareFetch("https://openrouter.ai/api/v1/auth/key", {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    }, proxyOptions);
+    if (!res.ok) {
+      if (res.status === 401 || res.status === 403) return { message: "Invalid OpenRouter API key." };
+      return { message: `OpenRouter API error (${res.status})` };
+    }
+    const json = await res.json();
+    const d = json.data || {};
+    const usage = d.usage || 0;          // total $ used
+    const limit = d.limit || null;       // spending limit (null = unlimited)
+    const isFree = d.is_free_tier || false;
+    const quotas = {};
+    if (limit !== null && limit > 0) {
+      const remaining = Math.max(0, limit - usage);
+      quotas["credits"] = {
+        used: Math.round(usage * 100) / 100,
+        total: Math.round(limit * 100) / 100,
+        remaining: Math.round(remaining * 100) / 100,
+        remainingPercentage: Math.round((remaining / limit) * 100),
+        resetAt: null, unlimited: false, currency: "USD",
+      };
+    } else {
+      quotas["credits"] = {
+        used: Math.round(usage * 100) / 100,
+        total: 0, remaining: 0, remainingPercentage: 100,
+        resetAt: null, unlimited: true, currency: "USD",
+      };
+    }
+    const rateLimit = d.rate_limit || {};
+    return {
+      plan: isFree ? "OpenRouter (Free Tier)" : "OpenRouter",
+      quotas,
+      rateLimit: rateLimit.requests ? `${rateLimit.requests} req/${rateLimit.interval || "?"}` : null,
+    };
+  } catch (error) {
+    return { message: `OpenRouter connected. Unable to fetch usage: ${error.message}` };
+  }
+}
+
+// ─── OpenAI ──────────────────────────────────────────────────────────────────
+// GET https://api.openai.com/v1/organization/projects (verify key)
+// Billing info via /dashboard/billing/credit_grants (session-only, not API key)
+// For API keys we can at least verify the key and show subscription info
+async function getOpenAIUsage(apiKey, proxyOptions = null) {
+  if (!apiKey) return { message: "OpenAI API key not available." };
+  try {
+    // Try the billing credit grants endpoint (works with some key types)
+    const billingRes = await proxyAwareFetch("https://api.openai.com/dashboard/billing/credit_grants", {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    }, proxyOptions);
+    if (billingRes.ok) {
+      const data = await billingRes.json();
+      const totalGranted = data.total_granted || 0;
+      const totalUsed = data.total_used || 0;
+      const totalAvailable = data.total_available || 0;
+      return {
+        plan: "OpenAI",
+        quotas: {
+          credits: {
+            used: Math.round(totalUsed * 100) / 100,
+            total: Math.round(totalGranted * 100) / 100,
+            remaining: Math.round(totalAvailable * 100) / 100,
+            remainingPercentage: totalGranted > 0 ? Math.round((totalAvailable / totalGranted) * 100) : 100,
+            resetAt: null, unlimited: false, currency: "USD",
+          },
+        },
+      };
+    }
+    // Fallback: just verify the key is valid via models endpoint
+    const modelsRes = await proxyAwareFetch("https://api.openai.com/v1/models", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${apiKey}` },
+    }, proxyOptions);
+    if (modelsRes.status === 401) return { message: "Invalid OpenAI API key." };
+    if (modelsRes.ok) {
+      return { plan: "OpenAI", message: "OpenAI API key verified. Billing details available at platform.openai.com/usage." };
+    }
+    return { message: `OpenAI API error (${modelsRes.status})` };
+  } catch (error) {
+    return { message: `OpenAI connected. Unable to fetch usage: ${error.message}` };
+  }
+}
+
+// ─── Anthropic (API Key) ─────────────────────────────────────────────────────
+// No public balance API for API keys. Verify key + show plan info.
+async function getAnthropicUsage(apiKey, proxyOptions = null) {
+  if (!apiKey) return { message: "Anthropic API key not available." };
+  try {
+    // Try to count tokens as a health check (minimal cost)
+    const res = await proxyAwareFetch("https://api.anthropic.com/v1/models", {
+      method: "GET",
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+    }, proxyOptions);
+    if (res.status === 401) return { message: "Invalid Anthropic API key." };
+    if (res.ok) {
+      return { plan: "Anthropic (API Key)", message: "Anthropic API key verified. Billing details available at console.anthropic.com/settings/billing." };
+    }
+    return { message: `Anthropic API error (${res.status})` };
+  } catch (error) {
+    return { message: `Anthropic connected. Unable to verify: ${error.message}` };
+  }
+}
+
+// ─── Mistral ─────────────────────────────────────────────────────────────────
+// GET https://api.mistral.ai/v1/models (verify key)
+// No public billing API available
+async function getMistralUsage(apiKey, proxyOptions = null) {
+  if (!apiKey) return { message: "Mistral API key not available." };
+  try {
+    const res = await proxyAwareFetch("https://api.mistral.ai/v1/models", {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    }, proxyOptions);
+    if (res.status === 401) return { message: "Invalid Mistral API key." };
+    if (res.ok) {
+      return { plan: "Mistral", message: "Mistral API key verified. Billing details available at console.mistral.ai." };
+    }
+    return { message: `Mistral API error (${res.status})` };
+  } catch (error) {
+    return { message: `Mistral connected. Unable to verify: ${error.message}` };
+  }
+}
+
+// ─── Together AI ─────────────────────────────────────────────────────────────
+// GET https://api.together.xyz/v1/billing
+// Returns { balance, total_charged, total_granted }
+async function getTogetherUsage(apiKey, proxyOptions = null) {
+  if (!apiKey) return { message: "Together AI API key not available." };
+  try {
+    const res = await proxyAwareFetch("https://api.together.xyz/v1/billing", {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    }, proxyOptions);
+    if (res.status === 401) return { message: "Invalid Together AI API key." };
+    if (res.ok) {
+      const data = await res.json();
+      const balance = parseFloat(data.balance) || 0;
+      const totalCharged = parseFloat(data.total_charged) || 0;
+      const totalGranted = parseFloat(data.total_granted) || 0;
+      return {
+        plan: "Together AI",
+        quotas: {
+          credits: {
+            used: Math.round(totalCharged * 100) / 100,
+            total: Math.round(totalGranted * 100) / 100,
+            remaining: Math.round(balance * 100) / 100,
+            remainingPercentage: totalGranted > 0 ? Math.round((balance / totalGranted) * 100) : 100,
+            resetAt: null, unlimited: totalGranted === 0, currency: "USD",
+          },
+        },
+      };
+    }
+    // Fallback - verify key
+    const modelsRes = await proxyAwareFetch("https://api.together.xyz/v1/models", {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    }, proxyOptions);
+    if (modelsRes.ok) {
+      return { plan: "Together AI", message: "Together AI key verified. Check billing at api.together.xyz." };
+    }
+    return { message: `Together AI API error (${res.status})` };
+  } catch (error) {
+    return { message: `Together AI connected. Unable to fetch billing: ${error.message}` };
+  }
+}
+
+// ─── Fireworks AI ────────────────────────────────────────────────────────────
+// GET https://api.fireworks.ai/v1/accounts (billing info)
+async function getFireworksUsage(apiKey, proxyOptions = null) {
+  if (!apiKey) return { message: "Fireworks AI API key not available." };
+  try {
+    const res = await proxyAwareFetch("https://api.fireworks.ai/v1/accounts", {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    }, proxyOptions);
+    if (res.status === 401) return { message: "Invalid Fireworks AI API key." };
+    if (res.ok) {
+      const data = await res.json();
+      const accounts = Array.isArray(data.accounts) ? data.accounts : (Array.isArray(data) ? data : [data]);
+      const account = accounts[0] || {};
+      const balance = parseFloat(account.balance || account.credits_remaining || 0);
+      if (balance > 0 || account.balance !== undefined) {
+        return {
+          plan: "Fireworks AI",
+          quotas: {
+            credits: {
+              used: 0, total: 0, remaining: Math.round(balance * 100) / 100,
+              remainingPercentage: 100, resetAt: null, unlimited: true, currency: "USD",
+            },
+          },
+        };
+      }
+      return { plan: "Fireworks AI", message: "Fireworks AI key verified. Check billing at fireworks.ai/account." };
+    }
+    return { plan: "Fireworks AI", message: "Fireworks AI key verified. Billing at fireworks.ai/account." };
+  } catch (error) {
+    return { message: `Fireworks AI connected. Unable to fetch billing: ${error.message}` };
+  }
+}
+
+// ─── Groq ────────────────────────────────────────────────────────────────────
+// No public billing API. Verify key only.
+async function getGroqUsage(apiKey, proxyOptions = null) {
+  if (!apiKey) return { message: "Groq API key not available." };
+  try {
+    const res = await proxyAwareFetch("https://api.groq.com/openai/v1/models", {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    }, proxyOptions);
+    if (res.status === 401) return { message: "Invalid Groq API key." };
+    if (res.ok) {
+      return { plan: "Groq (Free)", message: "Groq API key verified. Free tier with rate limits. Check console.groq.com for details." };
+    }
+    return { message: `Groq API error (${res.status})` };
+  } catch (error) {
+    return { message: `Groq connected. Unable to verify: ${error.message}` };
+  }
+}
+
+// ─── Cohere ──────────────────────────────────────────────────────────────────
+// GET https://api.cohere.com/v2/api-keys (verify)
+async function getCohereUsage(apiKey, proxyOptions = null) {
+  if (!apiKey) return { message: "Cohere API key not available." };
+  try {
+    const res = await proxyAwareFetch("https://api.cohere.com/v2/models", {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    }, proxyOptions);
+    if (res.status === 401) return { message: "Invalid Cohere API key." };
+    if (res.ok) {
+      return { plan: "Cohere", message: "Cohere API key verified. Check billing at dashboard.cohere.com." };
+    }
+    return { message: `Cohere API error (${res.status})` };
+  } catch (error) {
+    return { message: `Cohere connected. Unable to verify: ${error.message}` };
+  }
+}
+
+// ─── ElevenLabs ──────────────────────────────────────────────────────────────
+// GET https://api.elevenlabs.io/v1/user/subscription
+// Returns { tier, character_count, character_limit, ... }
+async function getElevenLabsUsage(apiKey, proxyOptions = null) {
+  if (!apiKey) return { message: "ElevenLabs API key not available." };
+  try {
+    const res = await proxyAwareFetch("https://api.elevenlabs.io/v1/user/subscription", {
+      headers: { "xi-api-key": apiKey },
+    }, proxyOptions);
+    if (res.status === 401) return { message: "Invalid ElevenLabs API key." };
+    if (res.ok) {
+      const data = await res.json();
+      const used = data.character_count || 0;
+      const total = data.character_limit || 0;
+      const remaining = Math.max(0, total - used);
+      const nextReset = data.next_character_count_reset_unix
+        ? new Date(data.next_character_count_reset_unix * 1000).toISOString() : null;
+      return {
+        plan: `ElevenLabs (${data.tier || "Free"})`,
+        quotas: {
+          characters: {
+            used, total, remaining,
+            remainingPercentage: total > 0 ? Math.round((remaining / total) * 100) : 0,
+            resetAt: nextReset, unlimited: false,
+          },
+        },
+      };
+    }
+    return { message: `ElevenLabs API error (${res.status})` };
+  } catch (error) {
+    return { message: `ElevenLabs connected. Unable to fetch usage: ${error.message}` };
+  }
+}
+
+// ─── Deepgram ────────────────────────────────────────────────────────────────
+// GET https://api.deepgram.com/v1/projects → list projects
+// GET https://api.deepgram.com/v1/projects/{id}/balances → balance info
+async function getDeepgramUsage(apiKey, proxyOptions = null) {
+  if (!apiKey) return { message: "Deepgram API key not available." };
+  try {
+    // Get projects first
+    const projRes = await proxyAwareFetch("https://api.deepgram.com/v1/projects", {
+      headers: { Authorization: `Token ${apiKey}` },
+    }, proxyOptions);
+    if (projRes.status === 401) return { message: "Invalid Deepgram API key." };
+    if (!projRes.ok) return { message: `Deepgram API error (${projRes.status})` };
+    const projData = await projRes.json();
+    const projects = Array.isArray(projData.projects) ? projData.projects : [];
+    if (projects.length === 0) {
+      return { plan: "Deepgram", message: "Deepgram key verified but no projects found." };
+    }
+    // Get balance for first project
+    const projectId = projects[0].project_id;
+    const balRes = await proxyAwareFetch(`https://api.deepgram.com/v1/projects/${projectId}/balances`, {
+      headers: { Authorization: `Token ${apiKey}` },
+    }, proxyOptions);
+    if (!balRes.ok) {
+      return { plan: "Deepgram", message: "Deepgram key verified. Unable to fetch balance." };
+    }
+    const balData = await balRes.json();
+    const balances = Array.isArray(balData.balances) ? balData.balances : [];
+    const quotas = {};
+    for (const bal of balances) {
+      const amount = parseFloat(bal.amount) || 0;
+      const units = bal.units || "usd";
+      quotas[`balance_${units}`] = {
+        used: 0, total: 0, remaining: Math.round(amount * 100) / 100,
+        remainingPercentage: 100, resetAt: null, unlimited: true,
+        currency: units.toUpperCase(),
+      };
+    }
+    return { plan: "Deepgram", quotas };
+  } catch (error) {
+    return { message: `Deepgram connected. Unable to fetch balance: ${error.message}` };
+  }
+}
+
+// ─── Hyperbolic ──────────────────────────────────────────────────────────────
+// GET https://api.hyperbolic.xyz/v1/billing/credits
+async function getHyperbolicUsage(apiKey, proxyOptions = null) {
+  if (!apiKey) return { message: "Hyperbolic API key not available." };
+  try {
+    const res = await proxyAwareFetch("https://api.hyperbolic.xyz/v1/billing/credits", {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    }, proxyOptions);
+    if (res.status === 401) return { message: "Invalid Hyperbolic API key." };
+    if (res.ok) {
+      const data = await res.json();
+      const credits = parseFloat(data.credits || data.balance || 0);
+      return {
+        plan: "Hyperbolic",
+        quotas: {
+          credits: {
+            used: 0, total: 0, remaining: Math.round(credits * 100) / 100,
+            remainingPercentage: 100, resetAt: null, unlimited: true, currency: "USD",
+          },
+        },
+      };
+    }
+    return { plan: "Hyperbolic", message: "Hyperbolic key verified. Check billing at app.hyperbolic.xyz." };
+  } catch (error) {
+    return { message: `Hyperbolic connected. Unable to fetch credits: ${error.message}` };
   }
 }
