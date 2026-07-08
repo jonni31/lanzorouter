@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { useNotificationStore } from "@/store/notificationStore";
 import Sidebar from "../Sidebar";
 import Header from "../Header";
@@ -33,16 +33,9 @@ function getToastStyle(type) {
 
 export default function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [pathname, setPathname] = useState("");
-  const router = useRouter();
+  const pathname = usePathname();
   const notifications = useNotificationStore((state) => state.notifications);
   const removeNotification = useNotificationStore((state) => state.removeNotification);
-
-  useEffect(() => {
-    if (router.isReady) {
-      setPathname(router.pathname);
-    }
-  }, [router.isReady, router.pathname]);
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-bg">
