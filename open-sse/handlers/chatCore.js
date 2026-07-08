@@ -190,6 +190,29 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
     }
   }
 
+  // When removeProviderTokenLimits is on, inject a high max_tokens if the client
+  // didn't send one (or sent a low value). Many free providers default to very low
+  // output limits (e.g., Cloudflare AI = 256 tokens) when max_tokens is absent.
+  if (removeProviderTokenLimits) {
+    const BOOST_MAX = 64000;
+    const currentMax = translatedBody.max_tokens || translatedBody.max_completion_tokens || 0;
+    if (currentMax < BOOST_MAX) {
+      // For OpenAI-format providers (max_tokens)
+      if (translatedBody.max_tokens !== undefined || !translatedBody.max_completion_tokens) {
+        translatedBody.max_tokens = BOOST_MAX;
+      }
+      // For newer OpenAI format (max_completion_tokens)
+      if (translatedBody.max_completion_tokens !== undefined) {
+        translatedBody.max_completion_tokens = BOOST_MAX;
+      }
+      // For Gemini format (maxOutputTokens in generationConfig)
+      if (translatedBody.generationConfig) {
+        translatedBody.generationConfig.maxOutputTokens = BOOST_MAX;
+      }
+      log?.info?.("MAXTOKENS", `${provider.toUpperCase()} | boosted: ${currentMax || "unset"} → ${BOOST_MAX} (removeProviderTokenLimits)`);
+    }
+  }
+
   const executor = getExecutor(provider);
   trackPendingRequest(model, provider, connectionId, true);
   appendRequestLog({ model, provider, connectionId, status: "PENDING" }).catch(() => { });
