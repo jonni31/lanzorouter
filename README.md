@@ -1,10 +1,10 @@
 <div align="center">
 
-# ZevaiRouter
+# LanzoRouter
 
 ### One dashboard to route, automate, and track every AI provider.
 
-ZevaiRouter is a self-hosted AI gateway that puts **15+ AI providers behind a single OpenAI-compatible endpoint** — then logs you in, rotates your accounts, routes around failures, and tracks every token, all from one sleek 3D dashboard.
+LanzoRouter is a self-hosted AI gateway that puts **15+ AI providers behind a single OpenAI-compatible endpoint** — then logs you in, rotates your accounts, routes around failures, and tracks every token, all from one sleek 3D dashboard.
 
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev)
@@ -14,23 +14,42 @@ ZevaiRouter is a self-hosted AI gateway that puts **15+ AI providers behind a si
 [![License](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
 
 ```bash
-npx zevairouter
+npx lanzorouter
 ```
+
+> **Note:** LanzoRouter is a fork of ZevaiRouter with enhanced features and custom branding.
 
 </div>
 
 ---
 
-## Why ZevaiRouter?
+## 🚀 Quick Start
+
+```bash
+# Install and run
+npx lanzorouter
+
+# Or install globally
+npm install -g lanzorouter
+lanzorouter
+```
+
+**First-time setup:**
+1. Copy `.env.example` to `.env`
+2. Fill in your OAuth credentials (optional, only if using Google-based providers)
+3. Access dashboard at `http://localhost:20128`
+4. Add your API keys via the UI
+
+## Why LanzoRouter?
 
 You're juggling Claude, GPT, Gemini, Qwen, and a half-dozen other AI accounts — each with its own login, its own quota, its own API shape. Your coding agent only speaks OpenAI. Some accounts are rate-limited, others are fresh. Keeping it all straight is a full-time job.
 
-**ZevaiRouter collapses all of that into one endpoint and one dashboard.** Point any OpenAI-compatible tool at `http://localhost:1997/v1`, and ZevaiRouter handles the logins, the rotation, the fallback, and the bookkeeping behind the scenes.
+**LanzoRouter collapses all of that into one endpoint and one dashboard.** Point any OpenAI-compatible tool at `http://localhost:1997/v1`, and LanzoRouter handles the logins, the rotation, the fallback, and the bookkeeping behind the scenes.
 
 ```
 ┌─────────────┐         ┌──────────────────────┐         ┌─ Claude
 │ Your tool   │         │                      │────────▶├─ GPT / Codex
-│ (Claude     │  /v1    │     ZevaiRouter      │         ├─ Gemini
+│ (Claude     │  /v1    │     LanzoRouter      │         ├─ Gemini
 │  Code,      │────────▶│  route · rotate ·    │────────▶├─ Qwen / iFlow
 │  Cursor,    │ OpenAI  │  fallback · track    │         ├─ Kiro / Cursor
 │  scripts…)  │ format  │                      │────────▶├─ Cline / Qoder
@@ -43,7 +62,7 @@ You're juggling Claude, GPT, Gemini, Qwen, and a half-dozen other AI accounts �
 One `/v1` endpoint in front of every provider. Chat completions, embeddings, image generation, text-to-speech, speech-to-text, and web search — all through the format your tools already understand. No SDK changes, no per-provider glue code.
 
 ### 🤖 Multi-account browser automation
-Connect provider accounts the way a human would — by logging in. ZevaiRouter drives **real browser sessions via Playwright** (with an optional **Camoufox** stealth engine) to complete OAuth logins, then rotates across your accounts automatically. Watch it happen live with the **Live Browser Preview**, or bulk-import dozens of accounts at once with concurrent workers.
+Connect provider accounts the way a human would — by logging in. LanzoRouter drives **real browser sessions via Playwright** (with an optional **Camoufox** stealth engine) to complete OAuth logins, then rotates across your accounts automatically. Watch it happen live with the **Live Browser Preview**, or bulk-import dozens of accounts at once with concurrent workers.
 
 ### 🔀 Model combos with fallback & round-robin
 Group models into named **combos** that fail over automatically. If one provider is down or rate-limited, the next picks up — with optional **round-robin** load balancing so no single account gets hammered.
@@ -55,7 +74,7 @@ Every provider, every account, every token — in one place. See live usage, lim
 Route outbound provider traffic through a pool of HTTP/SOCKS proxies, with built-in **health checking** to drop dead proxies automatically. Great for keeping multi-account setups clean and resilient.
 
 ### 🛠️ One-click coding-agent setup
-Built-in config for the tools you already use — **Claude Code, Cursor, Cline, Codex, Roo, Kilo Code, OpenCode, Zed** and more. Point them at ZevaiRouter in a couple of clicks.
+Built-in config for the tools you already use — **Claude Code, Cursor, Cline, Codex, Roo, Kilo Code, OpenCode, Zed** and more. Point them at LanzoRouter in a couple of clicks.
 
 ### 🎨 Modern 3D dashboard
 A glassmorphism UI with real depth — layered soft shadows, smooth hover motion, and a console-log view so you can see exactly what's flowing through the router.
@@ -65,7 +84,7 @@ Runs locally or on your own server. Your accounts, keys, and tokens never leave 
 
 ## 🧩 Supported Providers
 
-ZevaiRouter connects to **15+ providers** via browser OAuth, device-code, and API-key flows:
+LanzoRouter connects to **15+ providers** via browser OAuth, device-code, and API-key flows:
 
 | | | | |
 | --- | --- | --- | --- |
@@ -74,11 +93,11 @@ ZevaiRouter connects to **15+ providers** via browser OAuth, device-code, and AP
 | iFlow | Qoder | CodeBuddy | GitHub |
 | GitLab | xAI (Grok) | …and more | |
 
-> Provider availability depends on your own accounts and each provider's terms. ZevaiRouter automates the login *you* would do by hand — keep your usage within each provider's ToS.
+> Provider availability depends on your own accounts and each provider's terms. LanzoRouter automates the login *you* would do by hand — keep your usage within each provider's ToS.
 
 ## 📦 Install
 
-The fastest way to run ZevaiRouter is straight from npm — no build step:
+The fastest way to run LanzoRouter is straight from npm — no build step:
 
 ```bash
 # Try it instantly (no install)
@@ -98,7 +117,7 @@ zevai --tray            # run in the system tray
 zevai --help            # see all options
 ```
 
-Data (accounts, settings, usage) is stored under `~/.zevai` (`%APPDATA%/zevai` on Windows). On first run, ZevaiRouter auto-migrates an existing `~/.9router` data dir so your accounts carry over.
+Data (accounts, settings, usage) is stored under `~/.zevai` (`%APPDATA%/zevai` on Windows). On first run, LanzoRouter auto-migrates an existing `~/.9router` data dir so your accounts carry over.
 
 ### Prerequisites
 
@@ -140,7 +159,7 @@ Once it's running, open:
 
 ## 🔌 Using the API
 
-Point any OpenAI-compatible client at ZevaiRouter:
+Point any OpenAI-compatible client at LanzoRouter:
 
 ```bash
 curl http://localhost:1997/v1/chat/completions \
@@ -233,6 +252,6 @@ Released under the **MIT** License — see [LICENSE](LICENSE).
 
 **[⬆ back to top](#zevairouter)**
 
-If ZevaiRouter saves you time, consider starring the repo ⭐
+If LanzoRouter saves you time, consider starring the repo ⭐
 
 </div>

@@ -1,10 +1,10 @@
 <div align="center">
 
-# ZevaiRouter
+# LanzoRouter
 
 ### 一个控制面板，路由、自动化并跟踪所有 AI 提供商。
 
-ZevaiRouter 是一个自托管的 AI 路由器，提供 **兼容 OpenAI 的 API**、**多账户浏览器自动化** 以及 **内置配额跟踪** —— 全部集成在一个精美的 **3D 控制面板** 中。
+LanzoRouter 是一个自托管的 AI 路由器，提供 **兼容 OpenAI 的 API**、**多账户浏览器自动化** 以及 **内置配额跟踪** —— 全部集成在一个精美的 **3D 控制面板** 中。
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)

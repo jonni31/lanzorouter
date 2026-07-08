@@ -1,9 +1,10 @@
 {
-  "name": "zevairouter-cli",
-  "version": "1.0.35",
-  "description": "ZevaiRouter CLI - Start and manage ZevaiRouter server",
+  "name": "lanzorouter-cli",
+  "version": "1.0.0",
+  "description": "LanzoRouter CLI - Start and manage LanzoRouter server",
   "bin": {
-    "zevai": "./cli.js"
+    "lanzo": "./cli.js",
+    "lanzorouter": "./cli.js"
   },
   "files": [
     "cli.js",
