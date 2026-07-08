@@ -161,6 +161,28 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
     }
   }
 
+  // Max tokens cap: enforce per-provider output token limit
+  // Prevents free model errors when client sends unlimited/too-large max_tokens
+  const providerMaxTokens = credentials?.providerSpecificData?.maxTokens;
+  if (providerMaxTokens && typeof providerMaxTokens === "number" && providerMaxTokens > 0) {
+    const clientMaxTokens = translatedBody.max_tokens || translatedBody.max_completion_tokens;
+    
+    // Cap if client requested more than provider limit, or set default if client didn't specify
+    if (!clientMaxTokens || clientMaxTokens > providerMaxTokens) {
+      const originalValue = clientMaxTokens || "unset";
+      
+      // Apply cap to both fields (different providers use different names)
+      if (translatedBody.max_tokens !== undefined || !translatedBody.max_completion_tokens) {
+        translatedBody.max_tokens = providerMaxTokens;
+      }
+      if (translatedBody.max_completion_tokens !== undefined) {
+        translatedBody.max_completion_tokens = providerMaxTokens;
+      }
+      
+      log?.info?.("MAXTOKENS", `${provider.toUpperCase()} | capped: ${originalValue} → ${providerMaxTokens}`);
+    }
+  }
+
   const executor = getExecutor(provider);
   trackPendingRequest(model, provider, connectionId, true);
   appendRequestLog({ model, provider, connectionId, status: "PENDING" }).catch(() => { });
