@@ -15,6 +15,7 @@ import ModelRow from "./ModelRow";
 import PassthroughModelsSection from "./PassthroughModelsSection";
 import CompatibleModelsSection from "./CompatibleModelsSection";
 import ConnectionRow from "./ConnectionRow";
+import ProviderSettings from "./ProviderSettings";
 import AddApiKeyModal from "./AddApiKeyModal";
 import EditCompatibleNodeModal from "./EditCompatibleNodeModal";
 import AddCustomModelModal from "./AddCustomModelModal";
@@ -1473,6 +1474,8 @@ export default function ProviderDetailPage() {
           )}
         </div>
       )}
+
+      <ProviderSettings providerId={providerId} />
 
       {isCompatible && providerNode && (
         <Card>

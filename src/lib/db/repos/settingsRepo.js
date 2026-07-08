@@ -39,6 +39,8 @@ const DEFAULT_SETTINGS = {
   ponytailEnabled: false,
   ponytailLevel: "full",
   contextInjectionEnabled: false,
+  providerAutoClean: {},
+  providerAutoFix: {},
 };
 
 async function readRaw() {
