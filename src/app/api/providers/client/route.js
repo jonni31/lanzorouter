@@ -43,9 +43,16 @@ function sanitize(c) {
 }
 
 function isUsageEligible(connection) {
-  return USAGE_SUPPORTED_PROVIDERS.includes(connection.provider) && (
-    connection.authType === "oauth" || USAGE_APIKEY_PROVIDERS.includes(connection.provider)
-  );
+  // Built-in providers: must be in USAGE_SUPPORTED_PROVIDERS
+  if (USAGE_SUPPORTED_PROVIDERS.includes(connection.provider)) {
+    return connection.authType === "oauth" || USAGE_APIKEY_PROVIDERS.includes(connection.provider);
+  }
+  // Custom openai-compatible providers with API keys are always eligible
+  // (balance detection is done server-side based on baseUrl)
+  if (connection.provider?.startsWith("openai-compatible-chat-") && connection.authType === "apikey") {
+    return true;
+  }
+  return false;
 }
 
 function parsePositiveInt(value, fallback) {

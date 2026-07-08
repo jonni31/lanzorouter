@@ -5,6 +5,7 @@
 
 import "open-sse/index.js"; // ensure proxyFetch patches globalThis.fetch
 import { getProviderConnectionById, updateProviderConnection, saveQuotaSnapshot } from "@/lib/localDb";
+import { getProviderNodeById } from "@/lib/db/repos/nodesRepo";
 import { getUsageForProvider } from "open-sse/services/usage.js";
 import { getExecutor } from "open-sse/executors/index.js";
 import { resolveConnectionProxyConfig } from "@/lib/network/connectionProxy";
@@ -82,7 +83,10 @@ export async function refreshAndUpdateCredentials(connection, force = false, pro
 function isUsageEligible(connection) {
   if (!connection) return false;
   if (connection.authType === "oauth") return true;
-  return connection.authType === "apikey" && USAGE_APIKEY_PROVIDERS.includes(connection.provider);
+  if (connection.authType === "apikey" && USAGE_APIKEY_PROVIDERS.includes(connection.provider)) return true;
+  // Custom openai-compatible providers with API keys are eligible
+  if (connection.provider?.startsWith("openai-compatible-chat-") && connection.authType === "apikey") return true;
+  return false;
 }
 
 /**
@@ -118,6 +122,18 @@ export async function resolveUsageForConnection(connectionId, opts = {}) {
   if (isOAuth) {
     const result = await refreshAndUpdateCredentials(conn, force, proxyOptions);
     conn = result.connection;
+  }
+
+  // For custom openai-compatible providers, resolve baseUrl from providerNode
+  if (conn.provider?.startsWith("openai-compatible-chat-") && !conn.baseUrl) {
+    try {
+      const node = await getProviderNodeById(conn.provider);
+      if (node?.baseUrl) {
+        conn = { ...conn, baseUrl: node.baseUrl };
+      }
+    } catch (e) {
+      // ignore - will fallback to generic message
+    }
   }
 
   let usage = await getUsageForProvider(conn, proxyOptions);

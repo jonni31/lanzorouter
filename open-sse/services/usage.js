@@ -163,7 +163,16 @@ export async function getUsageForProvider(connection, proxyOptions = null) {
       return { plan: "Cerebras", message: "Cerebras free tier — no balance API. Check usage at cloud.cerebras.ai." };
     case "hyperbolic":
       return await getHyperbolicUsage(apiKey, proxyOptions);
+    case "cloudflare-ai":
+      return { plan: "Cloudflare Workers AI (Free)", message: "Cloudflare Workers AI free tier — usage tracked at dash.cloudflare.com." };
+    case "xiaomi-mimo":
+      return { plan: "Xiaomi MiMo", message: "Xiaomi MiMo — no public balance API. Check usage at xiaomimimo.com." };
     default:
+      // Handle custom openai-compatible providers by detecting baseUrl
+      if (provider?.startsWith("openai-compatible-chat-")) {
+        const baseUrl = connection.baseUrl || connection.providerSpecificData?.baseUrl || "";
+        return await getCustomProviderUsage(apiKey, baseUrl, proxyOptions);
+      }
       return { message: `Usage API not implemented for ${provider}` };
   }
 }
@@ -2168,5 +2177,69 @@ async function getHyperbolicUsage(apiKey, proxyOptions = null) {
     return { plan: "Hyperbolic", message: "Hyperbolic key verified. Check billing at app.hyperbolic.xyz." };
   } catch (error) {
     return { message: `Hyperbolic connected. Unable to fetch credits: ${error.message}` };
+  }
+}
+
+// ─── Custom OpenAI-Compatible Provider Detection ─────────────────────────────
+// Detects the actual provider from the baseUrl and calls the appropriate balance API
+const CUSTOM_PROVIDER_DETECTORS = [
+  { pattern: /openrouter\.ai/i, name: "OpenRouter", handler: (apiKey, proxy) => getOpenRouterUsage(apiKey, proxy) },
+  { pattern: /api\.deepseek\.com/i, name: "DeepSeek", handler: (apiKey, proxy) => getDeepSeekUsage(apiKey, proxy) },
+  { pattern: /api\.together\.xyz|api\.together\.ai/i, name: "Together AI", handler: (apiKey, proxy) => getTogetherUsage(apiKey, proxy) },
+  { pattern: /api\.openai\.com/i, name: "OpenAI", handler: (apiKey, proxy) => getOpenAIUsage(apiKey, proxy) },
+  { pattern: /api\.anthropic\.com/i, name: "Anthropic", handler: (apiKey, proxy) => getAnthropicUsage(apiKey, proxy) },
+  { pattern: /api\.mistral\.ai/i, name: "Mistral", handler: (apiKey, proxy) => getMistralUsage(apiKey, proxy) },
+  { pattern: /api\.fireworks\.ai/i, name: "Fireworks AI", handler: (apiKey, proxy) => getFireworksUsage(apiKey, proxy) },
+  { pattern: /api\.groq\.com/i, name: "Groq", handler: (apiKey, proxy) => getGroqUsage(apiKey, proxy) },
+  { pattern: /api\.cohere\.com|api\.cohere\.ai/i, name: "Cohere", handler: (apiKey, proxy) => getCohereUsage(apiKey, proxy) },
+  { pattern: /api\.elevenlabs\.io/i, name: "ElevenLabs", handler: (apiKey, proxy) => getElevenLabsUsage(apiKey, proxy) },
+  { pattern: /api\.deepgram\.com/i, name: "Deepgram", handler: (apiKey, proxy) => getDeepgramUsage(apiKey, proxy) },
+  { pattern: /api\.hyperbolic\.xyz/i, name: "Hyperbolic", handler: (apiKey, proxy) => getHyperbolicUsage(apiKey, proxy) },
+  // Alibaba / DashScope — check balance via billing API
+  { pattern: /dashscope.*aliyun|dashscope-intl/i, name: "Alibaba DashScope", handler: (apiKey, proxy) => getAlibabaDashScopeUsage(apiKey, proxy) },
+];
+
+async function getCustomProviderUsage(apiKey, baseUrl, proxyOptions = null) {
+  if (!apiKey) return { message: "API key not available for this provider." };
+  if (!baseUrl) return { message: "Custom provider — no base URL configured for balance detection." };
+
+  for (const detector of CUSTOM_PROVIDER_DETECTORS) {
+    if (detector.pattern.test(baseUrl)) {
+      return await detector.handler(apiKey, proxyOptions);
+    }
+  }
+
+  // Unknown custom provider — try to at least verify the API key works
+  try {
+    const modelsUrl = baseUrl.replace(/\/+$/, "") + "/models";
+    const res = await proxyAwareFetch(modelsUrl, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    }, proxyOptions);
+    if (res.status === 401) return { message: "Invalid API key for this provider." };
+    if (res.ok) {
+      return { plan: "Custom Provider", message: "API key verified. No balance API available for this provider." };
+    }
+    return { message: "Custom provider connected. No balance API available." };
+  } catch {
+    return { message: "Custom provider connected. No balance API available." };
+  }
+}
+
+// ─── Alibaba DashScope ───────────────────────────────────────────────────────
+// DashScope doesn't have a simple balance API with API keys,
+// but we can verify the key works
+async function getAlibabaDashScopeUsage(apiKey, proxyOptions = null) {
+  if (!apiKey) return { message: "DashScope API key not available." };
+  try {
+    const res = await proxyAwareFetch("https://dashscope-intl.aliyuncs.com/compatible-mode/v1/models", {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    }, proxyOptions);
+    if (res.status === 401) return { message: "Invalid DashScope API key." };
+    if (res.ok) {
+      return { plan: "Alibaba DashScope", message: "DashScope API key verified. Check billing at console.aliyun.com." };
+    }
+    return { message: `DashScope API error (${res.status})` };
+  } catch (error) {
+    return { message: `DashScope connected. Unable to verify: ${error.message}` };
   }
 }
