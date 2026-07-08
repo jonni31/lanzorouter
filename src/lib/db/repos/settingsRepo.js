@@ -41,7 +41,7 @@ const DEFAULT_SETTINGS = {
   contextInjectionEnabled: false,
   providerAutoClean: {},
   providerAutoFix: {},
-  removeProviderTokenLimits: false,
+  providerRemoveTokenLimits: {},
 };
 
 async function readRaw() {

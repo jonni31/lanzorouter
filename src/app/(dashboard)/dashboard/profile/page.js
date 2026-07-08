@@ -1101,30 +1101,7 @@ export default function ProfilePage() {
               disabled={loading}
             />
           </div>
-          <div className="flex items-start sm:items-center justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm sm:text-base">Remove Provider Token Limits</p>
-              <p className="text-xs sm:text-sm text-text-muted">
-                Bypass per-connection output token caps. Free models may return longer responses.
-              </p>
-            </div>
-            <Toggle
-              checked={settings.removeProviderTokenLimits || false}
-              onChange={async (checked) => {
-                setSettings(prev => ({ ...prev, removeProviderTokenLimits: checked }));
-                try {
-                  await fetch("/api/settings", {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ removeProviderTokenLimits: checked }),
-                  });
-                } catch (err) {
-                  console.error("Failed to update removeProviderTokenLimits:", err);
-                }
-              }}
-              disabled={loading}
-            />
-          </div>
+          {/* Remove Provider Token Limits moved to per-provider settings */}
         </Card>
 
         {/* Account actions */}

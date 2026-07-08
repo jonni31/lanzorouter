@@ -59,6 +59,7 @@ export default function ProviderSettings({ providerId }) {
 
   const autoCleanEnabled = settings?.providerAutoClean?.[providerId] || false;
   const autoFixEnabled = settings?.providerAutoFix?.[providerId] || false;
+  const removeTokenLimitsEnabled = settings?.providerRemoveTokenLimits?.[providerId] || false;
 
   return (
     <Card className="mb-6">
@@ -90,6 +91,20 @@ export default function ProviderSettings({ providerId }) {
             <Toggle
               checked={autoFixEnabled}
               onChange={(checked) => updateSetting("providerAutoFix", checked)}
+              disabled={saving}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-medium">Remove Token Limits</div>
+              <div className="text-sm text-text-muted">
+                Bypass output token caps so models can finish long tasks without cutting off early
+              </div>
+            </div>
+            <Toggle
+              checked={removeTokenLimitsEnabled}
+              onChange={(checked) => updateSetting("providerRemoveTokenLimits", checked)}
               disabled={saving}
             />
           </div>
