@@ -1,6 +1,40 @@
 import { NextResponse } from "next/server";
 import { getAllQuotaSnapshots } from "@/lib/db/repos/quotaCacheRepo";
 import { getProviderConnections } from "@/lib/localDb";
+import { getAdapter } from "@/lib/db/adapter";
+
+/**
+ * Get today's usage stats for a specific provider from usageDaily table.
+ * Returns { requests, promptTokens, completionTokens, totalTokens } or null.
+ */
+async function getTodayUsageForProvider(provider) {
+  try {
+    const db = await getAdapter();
+    const now = new Date();
+    const dateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const row = db.get(`SELECT data FROM usageDaily WHERE dateKey = ?`, [dateKey]);
+    if (!row) return null;
+
+    const dayData = typeof row.data === "string" ? JSON.parse(row.data) : row.data;
+    const byProvider = dayData?.byProvider || {};
+
+    // Match exact provider or any provider that starts with the given prefix
+    // (custom providers have UUIDs as suffixes)
+    const stats = byProvider[provider];
+    if (stats) {
+      return {
+        requests: stats.requests || 0,
+        promptTokens: stats.promptTokens || 0,
+        completionTokens: stats.completionTokens || 0,
+        totalTokens: (stats.promptTokens || 0) + (stats.completionTokens || 0),
+      };
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * GET /api/usage/aggregate?provider=antigravity
@@ -100,10 +134,15 @@ export async function GET(request) {
       }
     }
 
+    // Always include today's internal usage stats so the frontend can display
+    // requests/tokens even for providers without a balance API.
+    const usageStats = await getTodayUsageForProvider(provider);
+
     return NextResponse.json({
       plan: provider.charAt(0).toUpperCase() + provider.slice(1),
       quotas: aggregated,
       message,
+      usageStats,
       accountCount: activeConnections.length,
       accountsWithQuota,
       deadCount,

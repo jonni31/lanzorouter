@@ -23,38 +23,57 @@ function parseCloudflareQuota(headers) {
 }
 
 /**
- * Parse generic rate limit headers (x-ratelimit-*)
+ * Parse generic rate limit headers (x-ratelimit-*, ratelimit-*, x-quota-*)
+ * Tries multiple common header naming conventions used across providers.
  */
 function parseGenericRateLimit(headers) {
-  const limit = headers.get("x-ratelimit-limit");
-  const remaining = headers.get("x-ratelimit-remaining");
-  const reset = headers.get("x-ratelimit-reset");
+  // Try standard x-ratelimit-* first, then ratelimit-*, then x-quota-*
+  const prefixes = [
+    ["x-ratelimit-limit", "x-ratelimit-remaining", "x-ratelimit-reset"],
+    ["ratelimit-limit", "ratelimit-remaining", "ratelimit-reset"],
+    ["x-quota-limit", "x-quota-remaining", "x-quota-reset"],
+    ["x-rate-limit-limit", "x-rate-limit-remaining", "x-rate-limit-reset"],
+  ];
 
-  if (!limit && !remaining) return null;
+  for (const [limitKey, remainingKey, resetKey] of prefixes) {
+    const limit = headers.get(limitKey);
+    const remaining = headers.get(remainingKey);
+    if (!limit && !remaining) continue;
 
-  return {
-    quotaLimit: limit ? parseInt(limit, 10) : null,
-    quotaRemaining: remaining ? parseInt(remaining, 10) : null,
-    quotaResetAt: reset ? new Date(parseInt(reset, 10) * 1000).toISOString() : null,
-    quotaUsed: limit && remaining ? parseInt(limit, 10) - parseInt(remaining, 10) : null,
-  };
+    const reset = headers.get(resetKey);
+    return {
+      quotaLimit: limit ? parseInt(limit, 10) : null,
+      quotaRemaining: remaining ? parseInt(remaining, 10) : null,
+      quotaResetAt: reset ? new Date(parseInt(reset, 10) * 1000).toISOString() : null,
+      quotaUsed: limit && remaining ? parseInt(limit, 10) - parseInt(remaining, 10) : null,
+    };
+  }
+
+  return null;
 }
 
 /**
- * Parse balance from response body (for providers like MiMo, Dashscope)
- * Expected format: { balance: 0.72 } or { credit: 0.72 } or { remaining_credit: 0.72 }
+ * Parse balance from response body.
+ * Many providers (especially Chinese gateways) embed balance/credit info in
+ * the completion response.  We try ALL providers — not just a hardcoded list —
+ * so that passively captured balances surface in the quota tracker.
+ *
+ * Expected fields: balance, credit, remaining_credit, remainingCredit,
+ * remaining_quota, quota_remaining, available_quota
  */
-async function parseBalanceFromBody(response, provider) {
-  // Only parse for providers known to return balance in response
-  const balanceProviders = ["xiaomi-mimo", "dashscope", "siliconflow"];
-  if (!balanceProviders.includes(provider)) return null;
-
+async function parseBalanceFromBody(response) {
   try {
     // Clone response so we don't consume the original stream
     const clone = response.clone();
     const body = await clone.json();
 
-    const balance = body.balance ?? body.credit ?? body.remaining_credit ?? body.remainingCredit;
+    const balance = body.balance
+      ?? body.credit
+      ?? body.remaining_credit
+      ?? body.remainingCredit
+      ?? body.remaining_quota
+      ?? body.quota_remaining
+      ?? body.available_quota;
     if (typeof balance === "number" && balance >= 0) {
       return { balance, balanceUpdatedAt: new Date().toISOString() };
     }
@@ -84,11 +103,11 @@ export async function parseQuota(response, provider) {
     quota = parseGenericRateLimit(headers);
   }
 
-  // Try balance from response body (only for non-streaming JSON responses;
+  // Try balance from response body for ALL providers (non-streaming JSON only;
   // parseBalanceFromBody clones the response so the original stream is intact)
   const contentType = headers.get("content-type") || "";
   if (!quota && contentType.includes("json")) {
-    const balanceInfo = await parseBalanceFromBody(response, provider);
+    const balanceInfo = await parseBalanceFromBody(response);
     if (balanceInfo) {
       quota = { ...quota, ...balanceInfo };
     }

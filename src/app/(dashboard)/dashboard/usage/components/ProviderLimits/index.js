@@ -508,6 +508,7 @@ export default function ProviderLimits() {
           quotas: parsedQuotas,
           plan: data.plan || null,
           message: data.message || null,
+          usageStats: data.usageStats || null,
           accountCount: data.accountCount || 0,
           accountsWithQuota: data.accountsWithQuota || 0,
           deadCount: data.deadCount || 0,
@@ -857,6 +858,7 @@ export default function ProviderLimits() {
           message: hasServerQuotas
             ? null
             : (serverData.message || base.quota.message || null),
+          usageStats: serverData.usageStats || null,
         },
         isLoading: serverAggregateLoading[provider] || false,
       };
@@ -1348,8 +1350,34 @@ export default function ProviderLimits() {
                     <p className="mt-1.5 text-xs text-text-muted">{error}</p>
                   </div>
                 ) : quota?.message ? (
-                  <div className="text-center py-5">
-                    <p className="text-xs text-text-muted">{quota.message}</p>
+                  <div className="text-center py-3">
+                    {quota.usageStats ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-center gap-1.5 text-text-muted">
+                          <span className="material-symbols-outlined text-[16px]">monitoring</span>
+                          <span className="text-[11px] font-medium uppercase tracking-wide">Today&apos;s Usage</span>
+                        </div>
+                        <div className="flex justify-center gap-4">
+                          <div className="text-center">
+                            <div className="text-lg font-semibold text-text">{quota.usageStats.requests.toLocaleString()}</div>
+                            <div className="text-[10px] text-text-muted">requests</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-lg font-semibold text-text">
+                              {quota.usageStats.totalTokens >= 1_000_000
+                                ? `${(quota.usageStats.totalTokens / 1_000_000).toFixed(1)}M`
+                                : quota.usageStats.totalTokens >= 1_000
+                                  ? `${(quota.usageStats.totalTokens / 1_000).toFixed(1)}K`
+                                  : quota.usageStats.totalTokens.toLocaleString()}
+                            </div>
+                            <div className="text-[10px] text-text-muted">tokens</div>
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-text-muted/60 pt-0.5">No balance API — showing internal tracking</p>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-text-muted py-2">{quota.message}</p>
+                    )}
                   </div>
                 ) : (
                   <QuotaTable
