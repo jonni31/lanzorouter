@@ -59,7 +59,7 @@ function getProviderDisplayName(provider) {
   return AI_PROVIDERS[provider]?.name || provider;
 }
 
-function buildProviderAggregateCard(provider, providerConnections, quotaData, loading, errors) {
+function buildProviderAggregateCard(provider, providerConnections, quotaData, loading, errors, providerLabels = {}) {
   if (!providerConnections.length) return null;
   const allQuotas = [];
   const errorMessages = [];
@@ -85,7 +85,7 @@ function buildProviderAggregateCard(provider, providerConnections, quotaData, lo
   return {
     id: `${provider}-aggregate`,
     provider,
-    name: getProviderDisplayName(provider),
+    name: providerLabels[provider] || getProviderDisplayName(provider),
     email: `${providerConnections.length} accounts`,
     isActive: providerConnections.some((connection) => connection.isActive ?? true),
     isAggregate: true,
@@ -99,7 +99,7 @@ function buildProviderAggregateCard(provider, providerConnections, quotaData, lo
   };
 }
 
-function buildProviderAggregateCards(connections, quotaData, loading, errors) {
+function buildProviderAggregateCards(connections, quotaData, loading, errors, providerLabels = {}) {
   const groups = new Map();
 
   connections.forEach((connection) => {
@@ -112,7 +112,7 @@ function buildProviderAggregateCards(connections, quotaData, loading, errors) {
 
   return [...groups.entries()]
     .map(([provider, providerConnections]) =>
-      buildProviderAggregateCard(provider, providerConnections, quotaData, loading, errors),
+      buildProviderAggregateCard(provider, providerConnections, quotaData, loading, errors, providerLabels),
     )
     .filter(Boolean);
 }
@@ -335,6 +335,7 @@ export default function ProviderLimits() {
   const [proxyPools, setProxyPools] = useState([]);
   const [providerFilter, setProviderFilter] = useState("all");
   const [providerOptions, setProviderOptions] = useState([]);
+  const [providerLabels, setProviderLabels] = useState({});
   const [displayMode, setDisplayMode] = useState("single");
   const [accountFilter, setAccountFilter] = useState("all");
   const [quotaSortMode, setQuotaSortMode] = useState("default");
@@ -388,6 +389,7 @@ export default function ProviderLimits() {
 
         setConnections(connectionList);
         setProviderOptions(getProviderOptions(data.providerOptions));
+        setProviderLabels(data.providerLabels || {});
         setPagination(nextPagination);
         setTotals(nextTotals);
         setPage(getPaginationPageValue(data.pagination, targetPage));
@@ -505,6 +507,7 @@ export default function ProviderLimits() {
         [provider]: {
           quotas: parsedQuotas,
           plan: data.plan || null,
+          message: data.message || null,
           accountCount: data.accountCount || 0,
           accountsWithQuota: data.accountsWithQuota || 0,
           deadCount: data.deadCount || 0,
@@ -811,29 +814,62 @@ export default function ProviderLimits() {
   );
 
   const clientAggregateCards = useMemo(
-    () => buildProviderAggregateCards(sortedConnections, quotaData, loading, errors),
-    [sortedConnections, quotaData, loading, errors],
+    () => buildProviderAggregateCards(sortedConnections, quotaData, loading, errors, providerLabels),
+    [sortedConnections, quotaData, loading, errors, providerLabels],
   );
 
-  // In bulk mode, prefer server-side aggregate (covers ALL accounts) over
-  // the client-side aggregate (only current page).
+  // In bulk mode, build one card per provider across ALL eligible providers
+  // (not just the connections on the current page), fed by the server-side
+  // aggregate which covers all accounts of each provider.
   const providerAggregateCards = useMemo(() => {
-    if (!Object.keys(serverAggregateData).length) return clientAggregateCards;
-    return clientAggregateCards.map((card) => {
-      const serverData = serverAggregateData[card.provider];
-      if (!serverData || !serverData.quotas?.length) return card;
+    if (displayMode !== "bulk") return clientAggregateCards;
+
+    const allProviders = providerFilter !== "all"
+      ? [providerFilter]
+      : providerOptions.map((opt) => opt.value || opt).filter((v) => v !== "all");
+
+    return allProviders.map((provider) => {
+      const clientCard = clientAggregateCards.find((c) => c.provider === provider);
+      const serverData = serverAggregateData[provider];
+
+      const base = clientCard || {
+        id: `${provider}-aggregate`,
+        provider,
+        name: providerLabels[provider] || getProviderDisplayName(provider),
+        email: "",
+        isActive: true,
+        isAggregate: true,
+        quota: { quotas: [], message: null },
+        isLoading: serverAggregateLoading[provider] ?? true,
+        error: null,
+        connectionIds: [],
+      };
+
+      if (!serverData) return base;
+
+      const hasServerQuotas = Array.isArray(serverData.quotas) && serverData.quotas.length > 0;
       return {
-        ...card,
-        email: `${serverData.accountCount || card.connectionIds?.length || 0} accounts`,
+        ...base,
+        email: `${serverData.accountCount || base.connectionIds?.length || 0} accounts`,
         quota: {
-          ...card.quota,
-          quotas: serverData.quotas,
-          message: null,
+          ...base.quota,
+          quotas: hasServerQuotas ? serverData.quotas : base.quota.quotas,
+          message: hasServerQuotas
+            ? null
+            : (serverData.message || base.quota.message || null),
         },
-        isLoading: serverAggregateLoading[card.provider] || false,
+        isLoading: serverAggregateLoading[provider] || false,
       };
     });
-  }, [clientAggregateCards, serverAggregateData, serverAggregateLoading]);
+  }, [
+    displayMode,
+    clientAggregateCards,
+    serverAggregateData,
+    serverAggregateLoading,
+    providerOptions,
+    providerFilter,
+    providerLabels,
+  ]);
 
   const renderedConnections = useMemo(() => {
     if (displayMode === "bulk") return providerAggregateCards;
@@ -1028,8 +1064,8 @@ export default function ProviderLimits() {
                           className="size-6 rounded-md object-contain"
                           fallbackText={provider.slice(0, 2).toUpperCase()}
                         />
-                        <span className="font-medium capitalize">
-                          {provider}
+                        <span className={providerLabels[provider] ? "font-medium" : "font-medium capitalize"}>
+                          {providerLabels[provider] || provider}
                         </span>
                         {providerFilter === provider && (
                           <span className="material-symbols-outlined ml-auto text-[20px]">

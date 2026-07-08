@@ -80,13 +80,60 @@ export async function refreshAndUpdateCredentials(connection, force = false, pro
   return { connection: updatedConnection, refreshed: true };
 }
 
+// Connections created via different flows use "apikey", "api_key" or "api-key".
+function isApiKeyAuth(authType) {
+  return ["apikey", "api_key", "api-key"].includes(String(authType || "").toLowerCase());
+}
+
 function isUsageEligible(connection) {
   if (!connection) return false;
   if (connection.authType === "oauth") return true;
-  if (connection.authType === "apikey" && USAGE_APIKEY_PROVIDERS.includes(connection.provider)) return true;
+  if (isApiKeyAuth(connection.authType) && USAGE_APIKEY_PROVIDERS.includes(connection.provider)) return true;
   // Custom openai-compatible providers with API keys are eligible
-  if (connection.provider?.startsWith("openai-compatible-chat-") && connection.authType === "apikey") return true;
+  if (connection.provider?.startsWith("openai-compatible-chat-") && isApiKeyAuth(connection.authType)) return true;
   return false;
+}
+
+/**
+ * Fallback: synthesize quota rows from passively captured data on the
+ * connection (updateConnectionQuota stores quotaLimit/quotaRemaining/balance
+ * parsed from live traffic headers/bodies). Used when the provider has no
+ * queryable balance API so the dashboard can still show last observed values.
+ */
+function passiveQuotaFallback(connection, usage) {
+  const hasQuotas = usage?.quotas && Object.keys(usage.quotas).length > 0;
+  if (hasQuotas) return usage;
+
+  const quotas = {};
+  if (typeof connection.balance === "number") {
+    quotas.balance = {
+      used: 0,
+      total: 0,
+      remaining: connection.balance,
+      remainingPercentage: 100,
+      resetAt: null,
+      unlimited: true,
+    };
+  }
+  if (typeof connection.quotaLimit === "number" && connection.quotaLimit > 0) {
+    const used = typeof connection.quotaUsed === "number"
+      ? connection.quotaUsed
+      : connection.quotaLimit - (connection.quotaRemaining ?? connection.quotaLimit);
+    quotas.rate_limit = {
+      used,
+      total: connection.quotaLimit,
+      resetAt: connection.quotaResetAt || null,
+    };
+  }
+
+  if (Object.keys(quotas).length === 0) return usage;
+  return {
+    ...(usage || {}),
+    plan: usage?.plan || null,
+    quotas,
+    message: null,
+    passive: true, // values observed from live traffic, not a live balance API
+  };
 }
 
 /**
@@ -147,6 +194,10 @@ export async function resolveUsageForConnection(connectionId, opts = {}) {
       console.warn(`[Usage] ${conn.provider}: force refresh failed: ${retryError.message}`);
     }
   }
+
+  // If the provider has no queryable balance API, fall back to quota/balance
+  // passively captured from live traffic (stored on the connection).
+  usage = passiveQuotaFallback(conn, usage);
 
   if (writeCache && usage && !usage.error) {
     try {

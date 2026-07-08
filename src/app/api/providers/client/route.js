@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
-import { getProviderConnections } from "@/lib/localDb";
+import { getProviderConnections, getProviderNodes } from "@/lib/localDb";
 import { backfillCodexEmails } from "@/lib/oauth/providers";
 import { USAGE_APIKEY_PROVIDERS, USAGE_SUPPORTED_PROVIDERS } from "@/shared/constants/providers";
+
+// Connections created via different flows use "apikey", "api_key" or "api-key".
+function isApiKeyAuth(authType) {
+  return ["apikey", "api_key", "api-key"].includes(String(authType || "").toLowerCase());
+}
 
 const SAFE_FIELDS = [
   "id", "provider", "authType", "name", "email", "displayName",
@@ -49,10 +54,18 @@ function isUsageEligible(connection) {
   }
   // Custom openai-compatible providers with API keys are always eligible
   // (balance detection is done server-side based on baseUrl)
-  if (connection.provider?.startsWith("openai-compatible-chat-") && connection.authType === "apikey") {
+  if (connection.provider?.startsWith("openai-compatible-chat-") && isApiKeyAuth(connection.authType)) {
     return true;
   }
   return false;
+}
+
+// Rank providers so the built-in quota-tracked providers (kiro, qoder,
+// antigravity, codebuddy, ...) always come before bulk apikey fleets and
+// custom providers. Unknown/custom providers sort last.
+function providerRank(provider) {
+  const idx = USAGE_SUPPORTED_PROVIDERS.indexOf(provider);
+  return idx === -1 ? Number.MAX_SAFE_INTEGER : idx;
 }
 
 function parsePositiveInt(value, fallback) {
@@ -65,18 +78,26 @@ function sortConnections(connections, sort) {
 
   if (sort === "provider") {
     return list.sort((a, b) => {
-      const orderA = USAGE_SUPPORTED_PROVIDERS.indexOf(a.provider);
-      const orderB = USAGE_SUPPORTED_PROVIDERS.indexOf(b.provider);
+      const orderA = providerRank(a.provider);
+      const orderB = providerRank(b.provider);
       if (orderA !== orderB) return orderA - orderB;
       return a.provider.localeCompare(b.provider);
     });
   }
 
+  // Default ("priority") sort: group by provider rank first so the built-in
+  // providers stay on the first pages, then priority within each provider.
   return list.sort((a, b) => {
+    const rankA = providerRank(a.provider);
+    const rankB = providerRank(b.provider);
+    if (rankA !== rankB) return rankA - rankB;
+    if ((a.provider || "") !== (b.provider || "")) {
+      return (a.provider || "").localeCompare(b.provider || "");
+    }
     const priorityA = a.priority ?? Number.MAX_SAFE_INTEGER;
     const priorityB = b.priority ?? Number.MAX_SAFE_INTEGER;
     if (priorityA !== priorityB) return priorityA - priorityB;
-    return (a.provider || "").localeCompare(b.provider || "");
+    return (a.name || "").localeCompare(b.name || "");
   });
 }
 
@@ -93,7 +114,24 @@ export async function GET(request) {
 
     const allConnections = await getProviderConnections();
     const eligibleConnections = allConnections.filter(isUsageEligible);
-    const providerOptions = Array.from(new Set(eligibleConnections.map((conn) => conn.provider))).sort();
+    const providerOptions = Array.from(new Set(eligibleConnections.map((conn) => conn.provider)))
+      .sort((a, b) => {
+        const rankDiff = providerRank(a) - providerRank(b);
+        return rankDiff !== 0 ? rankDiff : a.localeCompare(b);
+      });
+
+    // Friendly display names for custom provider nodes (openai-compatible-chat-<uuid>)
+    const providerLabels = {};
+    try {
+      const nodes = await getProviderNodes();
+      for (const node of nodes || []) {
+        if (node?.id && node?.name && providerOptions.includes(node.id)) {
+          providerLabels[node.id] = node.name;
+        }
+      }
+    } catch {
+      // Non-fatal: dropdown falls back to raw ids
+    }
 
     const providerFilteredConnections = eligibleConnections.filter((conn) => (
       provider === "all" || conn.provider === provider
@@ -115,6 +153,7 @@ export async function GET(request) {
     return NextResponse.json({
       connections: pageConnections,
       providerOptions,
+      providerLabels,
       pagination: {
         page: currentPage,
         pageSize,

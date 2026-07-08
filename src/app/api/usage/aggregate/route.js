@@ -88,9 +88,22 @@ export async function GET(request) {
       }
     }
 
+    // When no numeric quotas exist (provider without a balance API), surface
+    // the informational message from the snapshots so the bulk card can show it.
+    let message = null;
+    if (Object.keys(aggregated).length === 0) {
+      for (const snap of snapshots) {
+        if (activeIds.has(snap.connectionId) && snap.usage?.message) {
+          message = snap.usage.message;
+          break;
+        }
+      }
+    }
+
     return NextResponse.json({
       plan: provider.charAt(0).toUpperCase() + provider.slice(1),
       quotas: aggregated,
+      message,
       accountCount: activeConnections.length,
       accountsWithQuota,
       deadCount,

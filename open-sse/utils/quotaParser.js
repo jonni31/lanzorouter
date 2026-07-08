@@ -84,8 +84,10 @@ export async function parseQuota(response, provider) {
     quota = parseGenericRateLimit(headers);
   }
 
-  // Try balance from response body (for streaming, this won't work - handle separately)
-  if (!quota && !response.body) {
+  // Try balance from response body (only for non-streaming JSON responses;
+  // parseBalanceFromBody clones the response so the original stream is intact)
+  const contentType = headers.get("content-type") || "";
+  if (!quota && contentType.includes("json")) {
     const balanceInfo = await parseBalanceFromBody(response, provider);
     if (balanceInfo) {
       quota = { ...quota, ...balanceInfo };

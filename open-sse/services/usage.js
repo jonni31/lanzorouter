@@ -164,7 +164,7 @@ export async function getUsageForProvider(connection, proxyOptions = null) {
     case "hyperbolic":
       return await getHyperbolicUsage(apiKey, proxyOptions);
     case "cloudflare-ai":
-      return { plan: "Cloudflare Workers AI (Free)", message: "Cloudflare Workers AI free tier — usage tracked at dash.cloudflare.com." };
+      return await getCloudflareAIUsage(apiKey, providerSpecificData?.accountId, proxyOptions);
     case "xiaomi-mimo":
       return { plan: "Xiaomi MiMo", message: "Xiaomi MiMo — no public balance API. Check usage at xiaomimimo.com." };
     default:
@@ -2180,6 +2180,80 @@ async function getHyperbolicUsage(apiKey, proxyOptions = null) {
   }
 }
 
+// ─── Cloudflare Workers AI ───────────────────────────────────────────────────
+// Free tier: 10,000 neurons/day. Usage is only exposed via the GraphQL
+// Analytics API (dataset aiInferenceAdaptiveGroups), which requires the API
+// token to have the "Account Analytics: Read" permission. Tokens created from
+// the plain "Workers AI" template do NOT have it — in that case we return a
+// message explaining what to enable (the caller may still fall back to
+// passively captured rate-limit headers).
+const CF_FREE_DAILY_NEURONS = 10000;
+
+async function getCloudflareAIUsage(apiKey, accountId, proxyOptions = null) {
+  if (!apiKey) return { message: "Cloudflare API token not available." };
+  if (!accountId) return { message: "Cloudflare account ID not configured for this connection." };
+
+  const today = new Date().toISOString().slice(0, 10);
+  const query = `query($acc: String!, $start: Date!) {
+    viewer {
+      accounts(filter: { accountTag: $acc }) {
+        aiInferenceAdaptiveGroups(filter: { date_geq: $start }, limit: 100) {
+          sum { totalNeurons }
+          dimensions { date }
+        }
+      }
+    }
+  }`;
+
+  try {
+    const res = await proxyAwareFetch("https://api.cloudflare.com/client/v4/graphql", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ query, variables: { acc: accountId, start: today } }),
+    }, proxyOptions);
+
+    const data = await res.json().catch(() => null);
+
+    if (data?.errors?.length) {
+      const authz = data.errors.some((e) => e?.extensions?.code === "authz" || /not authorized/i.test(e?.message || ""));
+      if (authz) {
+        return {
+          plan: "Cloudflare Workers AI (Free)",
+          message: "Token lacks 'Account Analytics: Read' permission — can't read neuron usage. Free tier: 10K neurons/day.",
+        };
+      }
+      return { message: `Cloudflare analytics error: ${data.errors[0]?.message || "unknown"}` };
+    }
+
+    const groups = data?.data?.viewer?.accounts?.[0]?.aiInferenceAdaptiveGroups;
+    if (!Array.isArray(groups)) {
+      return { plan: "Cloudflare Workers AI (Free)", message: "Cloudflare Workers AI — no usage data returned. Free tier: 10K neurons/day." };
+    }
+
+    const todayGroup = groups.find((g) => g?.dimensions?.date === today);
+    const usedNeurons = Math.round(todayGroup?.sum?.totalNeurons || 0);
+
+    // Neuron allocation resets daily at 00:00 UTC
+    const reset = new Date();
+    reset.setUTCHours(24, 0, 0, 0);
+
+    return {
+      plan: "Cloudflare Workers AI (Free)",
+      quotas: {
+        neurons_daily: {
+          used: usedNeurons,
+          total: CF_FREE_DAILY_NEURONS,
+          resetAt: reset.toISOString(),
+          displayName: "Neurons (daily)",
+          remainingPercentage: Math.max(0, ((CF_FREE_DAILY_NEURONS - usedNeurons) / CF_FREE_DAILY_NEURONS) * 100),
+        },
+      },
+    };
+  } catch (error) {
+    return { message: `Cloudflare Workers AI connected. Unable to fetch usage: ${error.message}` };
+  }
+}
+
 // ─── Custom OpenAI-Compatible Provider Detection ─────────────────────────────
 // Detects the actual provider from the baseUrl and calls the appropriate balance API
 const CUSTOM_PROVIDER_DETECTORS = [
@@ -2197,6 +2271,9 @@ const CUSTOM_PROVIDER_DETECTORS = [
   { pattern: /api\.hyperbolic\.xyz/i, name: "Hyperbolic", handler: (apiKey, proxy) => getHyperbolicUsage(apiKey, proxy) },
   // Alibaba / DashScope — check balance via billing API
   { pattern: /dashscope.*aliyun|dashscope-intl/i, name: "Alibaba DashScope", handler: (apiKey, proxy) => getAlibabaDashScopeUsage(apiKey, proxy) },
+  // ZhipuAI / GLM (open.bigmodel.cn) — reuse the built-in GLM quota fetcher
+  { pattern: /open\.bigmodel\.cn/i, name: "ZhipuAI (GLM)", handler: (apiKey, proxy) => getGlmUsage(apiKey, "glm-cn", proxy) },
+  { pattern: /api\.z\.ai/i, name: "Z.AI (GLM)", handler: (apiKey, proxy) => getGlmUsage(apiKey, "glm", proxy) },
 ];
 
 async function getCustomProviderUsage(apiKey, baseUrl, proxyOptions = null) {
