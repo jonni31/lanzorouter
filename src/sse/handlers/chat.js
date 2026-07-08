@@ -241,8 +241,15 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
           testStatus: "active"
         });
       },
-      onRequestSuccess: async () => {
+      onRequestSuccess: async (metadata) => {
         await clearAccountError(credentials.connectionId, credentials, model);
+        // Store quota/balance info if present
+        if (metadata?.quotaInfo) {
+          const { updateConnectionQuota } = await import("@/lib/db/repos/connectionsRepo.js");
+          await updateConnectionQuota(credentials.connectionId, metadata.quotaInfo).catch((e) => {
+            log?.warn?.("QUOTA", `Failed to store quota for ${credentials.connectionId}: ${e.message}`);
+          });
+        }
       }
     });
 

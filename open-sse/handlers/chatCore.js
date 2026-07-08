@@ -22,6 +22,7 @@ import { injectCaveman } from "../rtk/caveman.js";
 import { injectPonytail } from "../rtk/ponytail.js";
 import { injectContextFiles } from "../context/injectContext.js";
 import { compressMessages, formatRtkLog } from "../rtk/index.js";
+import { parseQuota, isQuotaExhausted } from "../utils/quotaParser.js";
 
 /**
  * Core chat handler - shared between SSE and Worker
@@ -309,6 +310,21 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
   const sharedCtx = { provider, model, body, stream, translatedBody, finalBody, requestStartTime, connectionId, apiKey, clientRawRequest, onRequestSuccess };
   const appendLog = (extra) => appendRequestLog({ model, provider, connectionId, ...extra }).catch(() => { });
   const trackDone = () => trackPendingRequest(model, provider, connectionId, false);
+
+  // Parse quota/balance from response (headers or body for non-streaming)
+  let quotaInfo = null;
+  try {
+    quotaInfo = await parseQuota(providerResponse, provider);
+    if (quotaInfo) {
+      log?.info?.("QUOTA", `${provider} | ${JSON.stringify(quotaInfo)}`);
+      // Store quota info - will be handled by onRequestSuccess callback
+      if (onRequestSuccess && typeof onRequestSuccess === "function") {
+        onRequestSuccess({ quotaInfo }).catch((e) => log?.warn?.("QUOTA", `store failed: ${e.message}`));
+      }
+    }
+  } catch (e) {
+    log?.warn?.("QUOTA", `parse failed: ${e.message}`);
+  }
 
   // Provider forced streaming but client wants JSON
   if (!clientRequestedStreaming && providerRequiresStreaming) {

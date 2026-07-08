@@ -194,6 +194,29 @@ export async function reorderProviderConnections(providerId) {
   db.transaction(() => reorderInTx(db, providerId));
 }
 
+/**
+ * Update quota/balance info for a connection
+ * @param {string} id - Connection ID
+ * @param {object} quotaInfo - { quotaLimit, quotaRemaining, quotaUsed, quotaResetAt, balance, balanceUpdatedAt }
+ */
+export async function updateConnectionQuota(id, quotaInfo) {
+  const db = await getAdapter();
+  let result;
+  db.transaction(() => {
+    const row = db.get(`SELECT * FROM providerConnections WHERE id = ?`, [id]);
+    if (!row) { result = null; return; }
+    const existing = rowToConn(row);
+    const merged = {
+      ...existing,
+      ...quotaInfo,
+      updatedAt: new Date().toISOString()
+    };
+    upsert(db, merged);
+    result = merged;
+  });
+  return result;
+}
+
 export async function cleanupProviderConnections() {
   const db = await getAdapter();
   const fieldsToCheck = [

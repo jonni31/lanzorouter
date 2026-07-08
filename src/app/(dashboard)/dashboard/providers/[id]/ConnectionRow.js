@@ -195,6 +195,21 @@ export default function ConnectionRow({ connection, proxyPools, isOAuth, isFirst
                 Max: {connection.providerSpecificData.maxTokens}
               </Badge>
             )}
+            {connection.balance !== undefined && connection.balance !== null && (
+              <Badge variant={connection.balance > 0 ? "success" : "error"} size="sm">
+                ${connection.balance.toFixed(2)}
+              </Badge>
+            )}
+            {connection.quotaRemaining !== undefined && connection.quotaLimit && (
+              <Badge variant="default" size="sm" title={`${connection.quotaRemaining} / ${connection.quotaLimit} remaining`}>
+                {(() => {
+                  const percent = Math.round((connection.quotaRemaining / connection.quotaLimit) * 100);
+                  if (connection.quotaLimit >= 10000) return `${percent}%`;
+                  const fmt = (n) => n >= 1000 ? `${(n/1000).toFixed(1)}K` : n;
+                  return `${fmt(connection.quotaRemaining)}/${fmt(connection.quotaLimit)}`;
+                })()}
+              </Badge>
+            )}
             {getOneByOneLabel() && (
               <Badge variant={getOneByOneVariant()} size="sm">
                 {getOneByOneLabel()}
