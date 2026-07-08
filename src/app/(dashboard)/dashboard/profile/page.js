@@ -1101,6 +1101,35 @@ export default function ProfilePage() {
               disabled={loading}
             />
           </div>
+          <div className="flex items-start sm:items-center justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm sm:text-base">Max Tokens Cap</p>
+              <p className="text-xs sm:text-sm text-text-muted">
+                Global limit on output tokens per request. Set 0 to disable.
+              </p>
+            </div>
+            <input
+              type="number"
+              min="0"
+              step="1000"
+              className="w-28 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-text-main focus:border-primary focus:outline-none"
+              value={settings.maxTokensCap || 0}
+              onChange={async (e) => {
+                const val = parseInt(e.target.value, 10) || 0;
+                setSettings(prev => ({ ...prev, maxTokensCap: val }));
+                try {
+                  await fetch("/api/settings", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ maxTokensCap: val }),
+                  });
+                } catch (err) {
+                  console.error("Failed to update maxTokensCap:", err);
+                }
+              }}
+              disabled={loading}
+            />
+          </div>
         </Card>
 
         {/* Account actions */}

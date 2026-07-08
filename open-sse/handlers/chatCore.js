@@ -31,7 +31,7 @@ import { parseQuota, isQuotaExhausted } from "../utils/quotaParser.js";
  * @param {object} options.credentials - Provider credentials
  * @param {string} options.sourceFormatOverride - Override detected source format (e.g. "openai-responses")
  */
-export async function handleChatCore({ body, modelInfo, credentials, log, onCredentialsRefreshed, onRequestSuccess, onDisconnect, clientRawRequest, connectionId, userAgent, apiKey, ccFilterNaming, rtkEnabled, cavemanEnabled, cavemanLevel, contextInjectionEnabled, ponytailEnabled, ponytailLevel, sourceFormatOverride, providerThinking }) {
+export async function handleChatCore({ body, modelInfo, credentials, log, onCredentialsRefreshed, onRequestSuccess, onDisconnect, clientRawRequest, connectionId, userAgent, apiKey, ccFilterNaming, rtkEnabled, cavemanEnabled, cavemanLevel, contextInjectionEnabled, ponytailEnabled, ponytailLevel, sourceFormatOverride, providerThinking, maxTokensCap }) {
   const { provider, model } = modelInfo;
   const requestStartTime = Date.now();
 
@@ -181,6 +181,20 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
       }
       
       log?.info?.("MAXTOKENS", `${provider.toUpperCase()} | capped: ${originalValue} → ${providerMaxTokens}`);
+    }
+  }
+
+  // Global max tokens cap from settings (applies after per-provider cap)
+  if (maxTokensCap && typeof maxTokensCap === "number" && maxTokensCap > 0) {
+    const currentMax = translatedBody.max_tokens || translatedBody.max_completion_tokens;
+    if (currentMax && currentMax > maxTokensCap) {
+      // Don't cap below thinking budget (Claude API requirement)
+      const thinkingBudget = translatedBody.thinking?.budget_tokens || 0;
+      if (maxTokensCap > thinkingBudget) {
+        if (translatedBody.max_tokens !== undefined) translatedBody.max_tokens = maxTokensCap;
+        if (translatedBody.max_completion_tokens !== undefined) translatedBody.max_completion_tokens = maxTokensCap;
+        log?.info?.("MAXTOKENS", `Global cap: ${currentMax} → ${maxTokensCap}`);
+      }
     }
   }
 
