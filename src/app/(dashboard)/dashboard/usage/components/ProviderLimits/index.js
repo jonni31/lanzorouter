@@ -7,10 +7,7 @@ import Toggle from "@/shared/components/Toggle";
 import { parseQuotaData, calculatePercentage } from "./utils";
 import Card from "@/shared/components/Card";
 import { EditConnectionModal } from "@/shared/components";
-import {
-  AI_PROVIDERS,
-  USAGE_SUPPORTED_PROVIDERS,
-} from "@/shared/constants/providers";
+import { AI_PROVIDERS } from "@/shared/constants/providers";
 
 function getConnectionLabel(connection) {
   const isEmail = (value) =>
@@ -628,9 +625,7 @@ export default function ProviderLimits() {
           await fetchConnections();
           setShowEditModal(false);
           setSelectedConnection(null);
-          if (USAGE_SUPPORTED_PROVIDERS.includes(provider)) {
-            await fetchQuota(connectionId, provider);
-          }
+          await fetchQuota(connectionId, provider);
         }
       } catch (error) {
         console.error("Error saving connection:", error);

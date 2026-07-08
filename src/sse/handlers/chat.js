@@ -232,7 +232,7 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
       ponytailLevel: chatSettings.ponytailLevel || "full",
       contextInjectionEnabled: !!chatSettings.contextInjectionEnabled,
       providerThinking,
-      maxTokensCap: chatSettings.maxTokensCap || 0,
+      removeProviderTokenLimits: chatSettings.removeProviderTokenLimits || false,
       // Detect source format by endpoint + body
       sourceFormatOverride: request?.url ? detectFormatByEndpoint(new URL(request.url).pathname, body) : null,
       onCredentialsRefreshed: async (newCreds) => {

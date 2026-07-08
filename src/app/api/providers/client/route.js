@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getProviderConnections } from "@/lib/localDb";
 import { backfillCodexEmails } from "@/lib/oauth/providers";
-import { USAGE_APIKEY_PROVIDERS, USAGE_SUPPORTED_PROVIDERS } from "@/shared/constants/providers";
+// All providers shown in quota tracker (no provider filter)
 
 const SAFE_FIELDS = [
   "id", "provider", "authType", "name", "email", "displayName",
@@ -43,9 +43,10 @@ function sanitize(c) {
 }
 
 function isUsageEligible(connection) {
-  return USAGE_SUPPORTED_PROVIDERS.includes(connection.provider) && (
-    connection.authType === "oauth" || USAGE_APIKEY_PROVIDERS.includes(connection.provider)
-  );
+  // Show all connections in quota tracker - not just built-in providers.
+  // Connections without a known usage API will gracefully show "not available".
+  if (!connection || !connection.provider) return false;
+  return true;
 }
 
 function parsePositiveInt(value, fallback) {
@@ -57,12 +58,7 @@ function sortConnections(connections, sort) {
   const list = [...connections];
 
   if (sort === "provider") {
-    return list.sort((a, b) => {
-      const orderA = USAGE_SUPPORTED_PROVIDERS.indexOf(a.provider);
-      const orderB = USAGE_SUPPORTED_PROVIDERS.indexOf(b.provider);
-      if (orderA !== orderB) return orderA - orderB;
-      return a.provider.localeCompare(b.provider);
-    });
+    return list.sort((a, b) => a.provider.localeCompare(b.provider));
   }
 
   return list.sort((a, b) => {

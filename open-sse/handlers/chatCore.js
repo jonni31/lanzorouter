@@ -31,7 +31,7 @@ import { parseQuota, isQuotaExhausted } from "../utils/quotaParser.js";
  * @param {object} options.credentials - Provider credentials
  * @param {string} options.sourceFormatOverride - Override detected source format (e.g. "openai-responses")
  */
-export async function handleChatCore({ body, modelInfo, credentials, log, onCredentialsRefreshed, onRequestSuccess, onDisconnect, clientRawRequest, connectionId, userAgent, apiKey, ccFilterNaming, rtkEnabled, cavemanEnabled, cavemanLevel, contextInjectionEnabled, ponytailEnabled, ponytailLevel, sourceFormatOverride, providerThinking, maxTokensCap }) {
+export async function handleChatCore({ body, modelInfo, credentials, log, onCredentialsRefreshed, onRequestSuccess, onDisconnect, clientRawRequest, connectionId, userAgent, apiKey, ccFilterNaming, rtkEnabled, cavemanEnabled, cavemanLevel, contextInjectionEnabled, ponytailEnabled, ponytailLevel, sourceFormatOverride, providerThinking, removeProviderTokenLimits }) {
   const { provider, model } = modelInfo;
   const requestStartTime = Date.now();
 
@@ -162,38 +162,29 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
     }
   }
 
-  // Max tokens cap: enforce per-provider output token limit
-  // Prevents free model errors when client sends unlimited/too-large max_tokens
+  // Per-provider max tokens enforcement (skip if removeProviderTokenLimits is on)
+  // When enabled, provider-imposed output token limits are bypassed so free models
+  // can return longer responses (the upstream provider may still enforce its own cap).
   const providerMaxTokens = credentials?.providerSpecificData?.maxTokens;
   if (providerMaxTokens && typeof providerMaxTokens === "number" && providerMaxTokens > 0) {
-    const clientMaxTokens = translatedBody.max_tokens || translatedBody.max_completion_tokens;
-    
-    // Cap if client requested more than provider limit, or set default if client didn't specify
-    if (!clientMaxTokens || clientMaxTokens > providerMaxTokens) {
-      const originalValue = clientMaxTokens || "unset";
+    if (removeProviderTokenLimits) {
+      log?.info?.("MAXTOKENS", `${provider.toUpperCase()} | provider limit ${providerMaxTokens} BYPASSED (setting enabled)`);
+    } else {
+      const clientMaxTokens = translatedBody.max_tokens || translatedBody.max_completion_tokens;
       
-      // Apply cap to both fields (different providers use different names)
-      if (translatedBody.max_tokens !== undefined || !translatedBody.max_completion_tokens) {
-        translatedBody.max_tokens = providerMaxTokens;
-      }
-      if (translatedBody.max_completion_tokens !== undefined) {
-        translatedBody.max_completion_tokens = providerMaxTokens;
-      }
-      
-      log?.info?.("MAXTOKENS", `${provider.toUpperCase()} | capped: ${originalValue} → ${providerMaxTokens}`);
-    }
-  }
-
-  // Global max tokens cap from settings (applies after per-provider cap)
-  if (maxTokensCap && typeof maxTokensCap === "number" && maxTokensCap > 0) {
-    const currentMax = translatedBody.max_tokens || translatedBody.max_completion_tokens;
-    if (currentMax && currentMax > maxTokensCap) {
-      // Don't cap below thinking budget (Claude API requirement)
-      const thinkingBudget = translatedBody.thinking?.budget_tokens || 0;
-      if (maxTokensCap > thinkingBudget) {
-        if (translatedBody.max_tokens !== undefined) translatedBody.max_tokens = maxTokensCap;
-        if (translatedBody.max_completion_tokens !== undefined) translatedBody.max_completion_tokens = maxTokensCap;
-        log?.info?.("MAXTOKENS", `Global cap: ${currentMax} → ${maxTokensCap}`);
+      // Cap if client requested more than provider limit, or set default if client didn't specify
+      if (!clientMaxTokens || clientMaxTokens > providerMaxTokens) {
+        const originalValue = clientMaxTokens || "unset";
+        
+        // Apply cap to both fields (different providers use different names)
+        if (translatedBody.max_tokens !== undefined || !translatedBody.max_completion_tokens) {
+          translatedBody.max_tokens = providerMaxTokens;
+        }
+        if (translatedBody.max_completion_tokens !== undefined) {
+          translatedBody.max_completion_tokens = providerMaxTokens;
+        }
+        
+        log?.info?.("MAXTOKENS", `${provider.toUpperCase()} | capped: ${originalValue} → ${providerMaxTokens}`);
       }
     }
   }

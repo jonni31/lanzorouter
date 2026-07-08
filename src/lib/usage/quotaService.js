@@ -8,7 +8,7 @@ import { getProviderConnectionById, updateProviderConnection, saveQuotaSnapshot 
 import { getUsageForProvider } from "open-sse/services/usage.js";
 import { getExecutor } from "open-sse/executors/index.js";
 import { resolveConnectionProxyConfig } from "@/lib/network/connectionProxy";
-import { USAGE_APIKEY_PROVIDERS } from "@/shared/constants/providers";
+// Provider filter removed — all connections eligible for quota tracking
 
 const AUTH_EXPIRED_PATTERNS = ["expired", "authentication", "unauthorized", "401", "re-authorize"];
 function isAuthExpiredMessage(usage) {
@@ -80,9 +80,10 @@ export async function refreshAndUpdateCredentials(connection, force = false, pro
 }
 
 function isUsageEligible(connection) {
+  // Allow all connections — unsupported providers gracefully return
+  // { message: "Usage API not implemented for <provider>" } from getUsageForProvider
   if (!connection) return false;
-  if (connection.authType === "oauth") return true;
-  return connection.authType === "apikey" && USAGE_APIKEY_PROVIDERS.includes(connection.provider);
+  return true;
 }
 
 /**
