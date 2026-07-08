@@ -29,6 +29,7 @@ export default function AddApiKeyModal({ isOpen, provider, providerName, isCompa
     priority: 1,
     proxyPoolId: NONE_PROXY_POOL_VALUE,
     ollamaHostUrl: "",
+    maxTokens: "",
   });
   const [azureData, setAzureData] = useState({
     azureEndpoint: "",
@@ -46,11 +47,14 @@ export default function AddApiKeyModal({ isOpen, provider, providerName, isCompa
   const [bulkResult, setBulkResult] = useState(null); // { success, failed }
 
   const buildProviderSpecificData = () => {
+    let baseData = {};
+    
     if (isOllamaLocal && formData.ollamaHostUrl.trim()) {
-      return { baseUrl: formData.ollamaHostUrl.trim() };
+      baseData.baseUrl = formData.ollamaHostUrl.trim();
     }
     if (isAzure) {
-      return {
+      baseData = {
+        ...baseData,
         azureEndpoint: azureData.azureEndpoint,
         apiVersion: azureData.apiVersion,
         deployment: azureData.deployment,
@@ -58,12 +62,19 @@ export default function AddApiKeyModal({ isOpen, provider, providerName, isCompa
       };
     }
     if (isCloudflareAi) {
-      return { accountId: cloudflareData.accountId };
+      baseData.accountId = cloudflareData.accountId;
     }
     if (providerRegions && region) {
-      return { region };
+      baseData.region = region;
     }
-    return undefined;
+    
+    // Add maxTokens if set (applies to all providers)
+    const maxTokensNum = parseInt(formData.maxTokens, 10);
+    if (maxTokensNum > 0) {
+      baseData.maxTokens = maxTokensNum;
+    }
+    
+    return Object.keys(baseData).length > 0 ? baseData : undefined;
   };
 
   const handleValidate = async () => {
@@ -333,6 +344,17 @@ export default function AddApiKeyModal({ isOpen, provider, providerName, isCompa
           value={formData.priority}
           onChange={(e) => setFormData({ ...formData, priority: Number.parseInt(e.target.value) || 1 })}
         />
+
+        <Input
+          label="Max Output Tokens (Optional)"
+          type="number"
+          value={formData.maxTokens}
+          onChange={(e) => setFormData({ ...formData, maxTokens: e.target.value })}
+          placeholder="e.g. 4096, 8192"
+        />
+        <p className="text-xs text-text-muted">
+          Cap the maximum output tokens for this provider. Prevents "no response" errors on free models with output limits. Leave empty for no limit.
+        </p>
 
         <Select
           label="Proxy Pool"
