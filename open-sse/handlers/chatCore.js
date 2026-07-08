@@ -23,6 +23,7 @@ import { injectPonytail } from "../rtk/ponytail.js";
 import { injectContextFiles } from "../context/injectContext.js";
 import { compressMessages, formatRtkLog } from "../rtk/index.js";
 import { parseQuota, isQuotaExhausted } from "../utils/quotaParser.js";
+import { wrapWithAutoContinue, makeContinuationStream } from "./chatCore/autoContinue.js";
 
 /**
  * Core chat handler - shared between SSE and Worker
@@ -346,7 +347,29 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
 
   // Streaming response
   const { onStreamComplete, streamDetailId } = buildOnStreamComplete({ ...sharedCtx });
-  return handleStreamingResponse({ ...sharedCtx, providerResponse, sourceFormat, targetFormat, userAgent, reqLogger, toolNameMap, streamController, onStreamComplete, streamDetailId });
+  const streamResult = handleStreamingResponse({ ...sharedCtx, providerResponse, sourceFormat, targetFormat, userAgent, reqLogger, toolNameMap, streamController, onStreamComplete, streamDetailId });
+
+  // Auto-continue: when enabled and the model stops with finish_reason "length",
+  // automatically send continuation requests so the output isn't truncated.
+  if (removeProviderTokenLimits && streamResult?.response?.body) {
+    const wrappedBody = wrapWithAutoContinue(streamResult.response.body, {
+      log,
+      makeContinuationResponse: (accContent) => makeContinuationStream(accContent, {
+        body, sourceFormat, targetFormat, upstreamModel,
+        credentials, provider, executor, signal: streamController.signal,
+        log, proxyOptions, userAgent, connectionId, apiKey
+      })
+    });
+
+    return {
+      success: true,
+      response: new Response(wrappedBody, {
+        headers: streamResult.response.headers
+      })
+    };
+  }
+
+  return streamResult;
 }
 
 export function isTokenExpiringSoon(expiresAt, bufferMs = 5 * 60 * 1000) {
