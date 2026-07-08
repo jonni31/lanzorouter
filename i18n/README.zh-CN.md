@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="../images/zevairouter.png?1" alt="ZevaiRouter Dashboard" width="800"/>
+  <img src="../images/lanzorouter.png?1" alt="ZevaiRouter Dashboard" width="800"/>
   
   # ZevaiRouter - 免费 AI 路由器
   

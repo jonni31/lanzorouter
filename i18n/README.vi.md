@@ -1,7 +1,7 @@
 Dưới đây là bản dịch tiếng Việt của tài liệu Markdown, giữ nguyên toàn bộ cú pháp và cấu trúc kỹ thuật.
 
 <div align="center">
-  <img src="../images/zevairouter.png?1" alt="Bảng điều khiển ZevaiRouter" width="800"/>
+  <img src="../images/lanzorouter.png?1" alt="Bảng điều khiển ZevaiRouter" width="800"/>
   
   # ZevaiRouter - Free AI Router
   
