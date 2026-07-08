@@ -227,12 +227,28 @@ export function parseQuotaData(provider, data) {
       default:
         // Generic fallback for unknown providers
         if (data.quotas) {
+          // Map internal key names to user-friendly display names
+          const friendlyNames = {
+            credits: "Credits",
+            balance_usd: "Balance (USD)",
+            balance_cny: "Balance (CNY)",
+            characters: "Characters",
+            points: "Points",
+          };
           Object.entries(data.quotas).forEach(([name, quota]) => {
+            const displayName = friendlyNames[name] || name.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
             normalizedQuotas.push({
-              name,
+              name: displayName,
               used: quota.used || 0,
               total: quota.total || 0,
+              remaining: quota.remaining,
+              remainingPercentage: quota.remainingPercentage,
               resetAt: quota.resetAt || null,
+              unlimited: quota.unlimited || false,
+              currency: quota.currency || null,
+              unit: quota.unit || null,
+              grantedBalance: quota.grantedBalance,
+              toppedUpBalance: quota.toppedUpBalance,
             });
           });
         }

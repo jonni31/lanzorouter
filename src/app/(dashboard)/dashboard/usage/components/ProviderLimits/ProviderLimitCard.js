@@ -165,6 +165,9 @@ export default function ProviderLimitCard({
                 percentage={percentage}
                 unlimited={unlimited}
                 resetTime={quota.resetAt}
+                remaining={quota.remaining}
+                currency={quota.currency}
+                unit={quota.unit}
               />
             );
           })}

@@ -5,6 +5,23 @@ import { formatResetTime, getRemainingPercentage } from "./utils";
 
 const PAGE_SIZE = 10;
 
+// Format a number as currency or with appropriate unit
+function formatBalance(value, currency, unit) {
+  if (currency) {
+    const sym = { USD: "$", EUR: "€", GBP: "£", CNY: "¥", JPY: "¥" }[currency.toUpperCase()] || `${currency} `;
+    return `${sym}${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  if (unit) {
+    return `${Number(value).toLocaleString()} ${unit}`;
+  }
+  return Number(value).toLocaleString();
+}
+
+// Check if a quota row represents a balance (credit/money) vs request count
+function isBalanceQuota(quota) {
+  return !!(quota.currency || (quota.unlimited && quota.remainingBalance !== undefined && quota.remainingBalance !== null));
+}
+
 /**
  * Format reset time display (Today, 12:00 PM)
  */
@@ -97,6 +114,10 @@ export default function QuotaTable({
       ...quota,
       index,
       remaining: getRemainingPercentage(quota),
+      remainingBalance: quota.remaining,
+      currency: quota.currency || null,
+      unit: quota.unit || null,
+      unlimited: quota.unlimited || false,
     })),
     [quotas],
   );
@@ -169,25 +190,41 @@ export default function QuotaTable({
                   </td>
 
                   <td className={`${cellPad} w-[45%]`}>
-                    <div className={compact ? "space-y-1" : "space-y-1.5"}>
-                      <div className={`${compact ? "h-1" : "h-1.5"} rounded-full overflow-hidden border ${colors.bgLight} ${
-                        quota.remaining === 0 ? "border-black/10 dark:border-white/10" : "border-transparent"
-                      }`}>
-                        <div
-                          className={`h-full transition-all duration-300 ${colors.bg}`}
-                          style={{ width: `${Math.min(quota.remaining, 100)}%` }}
-                        />
+                    {isBalanceQuota(quota) ? (
+                      <div className="flex items-center gap-1.5">
+                        <span className={`material-symbols-outlined ${compact ? "text-[14px]" : "text-[16px]"} text-sky-500`}>
+                          account_balance_wallet
+                        </span>
+                        <span className={`${compact ? "text-[12px]" : "text-sm"} font-semibold text-text-primary`}>
+                          {formatBalance(quota.remainingBalance ?? (quota.total - quota.used), quota.currency, quota.unit)}
+                        </span>
+                        {quota.used > 0 && (
+                          <span className={`${compact ? "text-[10px]" : "text-xs"} text-text-muted`}>
+                            ({formatBalance(quota.used, quota.currency, quota.unit)} used)
+                          </span>
+                        )}
                       </div>
+                    ) : (
+                      <div className={compact ? "space-y-1" : "space-y-1.5"}>
+                        <div className={`${compact ? "h-1" : "h-1.5"} rounded-full overflow-hidden border ${colors.bgLight} ${
+                          quota.remaining === 0 ? "border-black/10 dark:border-white/10" : "border-transparent"
+                        }`}>
+                          <div
+                            className={`h-full transition-all duration-300 ${colors.bg}`}
+                            style={{ width: `${Math.min(quota.remaining, 100)}%` }}
+                          />
+                        </div>
 
-                      <div className={`flex items-center justify-between ${compact ? "text-[10px]" : "text-xs"}`}>
-                        <span className="text-text-muted">
-                          {quota.used.toLocaleString()} / {quota.total > 0 ? quota.total.toLocaleString() : "∞"}
-                        </span>
-                        <span className={`font-medium ${colors.text}`}>
-                          {quota.remaining}%
-                        </span>
+                        <div className={`flex items-center justify-between ${compact ? "text-[10px]" : "text-xs"}`}>
+                          <span className="text-text-muted">
+                            {quota.used.toLocaleString()} / {quota.total > 0 ? quota.total.toLocaleString() : "∞"}
+                          </span>
+                          <span className={`font-medium ${colors.text}`}>
+                            {quota.remaining}%
+                          </span>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </td>
 
                   <td className={`${cellPad} w-[25%]`}>
