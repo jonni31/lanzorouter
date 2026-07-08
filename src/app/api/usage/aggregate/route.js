@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAllQuotaSnapshots } from "@/lib/db/repos/quotaCacheRepo";
 import { getProviderConnections } from "@/lib/localDb";
-import { getAdapter } from "@/lib/db/adapter";
+import { getAdapter } from "@/lib/db/driver";
 
 /**
  * Get today's usage stats for a specific provider from usageDaily table.
