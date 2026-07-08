@@ -4,30 +4,33 @@ import { getProviderConnections } from "@/lib/localDb";
 import { getAdapter } from "@/lib/db/driver";
 
 /**
- * Get today's usage stats for a specific provider from usageDaily table.
- * Returns { requests, promptTokens, completionTokens, totalTokens } or null.
+ * Get recent usage stats for a specific provider from usageDaily table.
+ * Checks today first, then falls back to the most recent day with data.
+ * Returns { requests, promptTokens, completionTokens, totalTokens, dateKey } or null.
  */
-async function getTodayUsageForProvider(provider) {
+async function getRecentUsageForProvider(provider) {
   try {
     const db = await getAdapter();
-    const now = new Date();
-    const dateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-    const row = db.get(`SELECT data FROM usageDaily WHERE dateKey = ?`, [dateKey]);
-    if (!row) return null;
 
-    const dayData = typeof row.data === "string" ? JSON.parse(row.data) : row.data;
-    const byProvider = dayData?.byProvider || {};
+    // Try to find data in the most recent days (today first, then yesterday, etc.)
+    const rows = db.all(
+      `SELECT dateKey, data FROM usageDaily ORDER BY dateKey DESC LIMIT 3`
+    );
+    if (!rows || rows.length === 0) return null;
 
-    // Match exact provider or any provider that starts with the given prefix
-    // (custom providers have UUIDs as suffixes)
-    const stats = byProvider[provider];
-    if (stats) {
-      return {
-        requests: stats.requests || 0,
-        promptTokens: stats.promptTokens || 0,
-        completionTokens: stats.completionTokens || 0,
-        totalTokens: (stats.promptTokens || 0) + (stats.completionTokens || 0),
-      };
+    for (const row of rows) {
+      const dayData = typeof row.data === "string" ? JSON.parse(row.data) : row.data;
+      const byProvider = dayData?.byProvider || {};
+      const stats = byProvider[provider];
+      if (stats && stats.requests > 0) {
+        return {
+          requests: stats.requests || 0,
+          promptTokens: stats.promptTokens || 0,
+          completionTokens: stats.completionTokens || 0,
+          totalTokens: (stats.promptTokens || 0) + (stats.completionTokens || 0),
+          dateKey: row.dateKey,
+        };
+      }
     }
 
     return null;
@@ -136,7 +139,7 @@ export async function GET(request) {
 
     // Always include today's internal usage stats so the frontend can display
     // requests/tokens even for providers without a balance API.
-    const usageStats = await getTodayUsageForProvider(provider);
+    const usageStats = await getRecentUsageForProvider(provider);
 
     return NextResponse.json({
       plan: provider.charAt(0).toUpperCase() + provider.slice(1),

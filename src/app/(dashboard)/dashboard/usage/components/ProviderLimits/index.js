@@ -1355,7 +1355,7 @@ export default function ProviderLimits() {
                       <div className="space-y-2">
                         <div className="flex items-center justify-center gap-1.5 text-text-muted">
                           <span className="material-symbols-outlined text-[16px]">monitoring</span>
-                          <span className="text-[11px] font-medium uppercase tracking-wide">Today&apos;s Usage</span>
+                          <span className="text-[11px] font-medium uppercase tracking-wide">Usage Stats</span>
                         </div>
                         <div className="flex justify-center gap-4">
                           <div className="text-center">
@@ -1373,7 +1373,11 @@ export default function ProviderLimits() {
                             <div className="text-[10px] text-text-muted">tokens</div>
                           </div>
                         </div>
-                        <p className="text-[10px] text-text-muted/60 pt-0.5">No balance API — showing internal tracking</p>
+                        <p className="text-[10px] text-text-muted/60 pt-0.5">
+                          {quota.usageStats.dateKey
+                            ? `${quota.usageStats.dateKey} — internal tracking`
+                            : "No balance API — internal tracking"}
+                        </p>
                       </div>
                     ) : (
                       <p className="text-xs text-text-muted py-2">{quota.message}</p>
