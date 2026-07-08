@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="../images/lanzorouter.png?1" alt="Панель управления ZevaiRouter" width="800"/>
+  <img src="../images/lanzorouter.png?1" alt="Панель управления LanzoRouter" width="800"/>
   
-  # ZevaiRouter - Free AI Router
+  # LanzoRouter - Free AI Router
   
   **Никогда не прекращайте кодить. Автоматическая маршрутизация к БЕСПЛАТНЫМ и дешёвым AI-моделям с умным механизмом резервирования.**
   
@@ -11,16 +11,16 @@
     <img src="../public/providers/openclaw.png" alt="OpenClaw" width="80"/>
   </p>
   
-  [![npm](https://img.shields.io/npm/v/zevairouter.svg)](https://www.npmjs.com/package/zevairouter)
-  [![Downloads](https://img.shields.io/npm/dm/zevairouter.svg)](https://www.npmjs.com/package/zevairouter)
-  [![License](https://img.shields.io/npm/l/zevairouter.svg)](https://github.com/Verifiedlabs/zevairouter/blob/main/LICENSE)
+  [![npm](https://img.shields.io/npm/v/lanzorouter.svg)](https://www.npmjs.com/package/lanzorouter)
+  [![Downloads](https://img.shields.io/npm/dm/lanzorouter.svg)](https://www.npmjs.com/package/lanzorouter)
+  [![License](https://img.shields.io/npm/l/lanzorouter.svg)](https://github.com/jonni31/lanzorouter/blob/main/LICENSE)
   
-  [🚀 Быстрый старт](#-quick-start) • [💡 Возможности](#-key-features) • [📖 Установка](#-setup-guide) • [🌐 Сайт](https://github.com/Verifiedlabs/zevairouter)
+  [🚀 Быстрый старт](#-quick-start) • [💡 Возможности](#-key-features) • [📖 Установка](#-setup-guide) • [🌐 Сайт](https://github.com/jonni31/lanzorouter)
 </div>
 
 ---
 
-## 🤔 Почему ZevaiRouter?
+## 🤔 Почему LanzoRouter?
 
 **Перестаньте тратить деньги и упираться в лимиты:**
 
@@ -29,7 +29,7 @@
 - ❌ Дорогие API ($20-50/мес за каждого провайдера)
 - ❌ Приходится вручную переключаться между провайдерами
 
-**ZevaiRouter решает это:**
+**LanzoRouter решает это:**
 
 - ✅ **Максимум из подписки** — Отслеживает квоту, использует каждый бит до сброса
 - ✅ **Автоматическое резервирование** — Подписка → Дёшево → Бесплатно, нулевой простой
@@ -48,7 +48,7 @@
        │ http://localhost:1997/v1
        ↓
 ┌────────────────────────────────────────┐
-│           ZevaiRouter (Smart Router)        │
+│           LanzoRouter (Smart Router)        │
 │  • Format translation (OpenAI ↔ Claude) │
 │  • Quota tracking                       │
 │  • Auto token refresh                   │
@@ -70,8 +70,8 @@ Result: Never stop coding, minimal cost
 **1. Глобальная установка:**
 
 ```bash
-npm install -g zevairouter
-zevairouter
+npm install -g lanzorouter
+lanzorouter
 ```
 
 🎉 Панель управления откроется на `http://localhost:1997`
@@ -93,7 +93,7 @@ zevairouter
 
 **Альтернатива: запуск из исходников (этот репозиторий):**
 
-Пакет этого репозитория приватный (`zevairouter-app`), поэтому запуск из исходников/Docker — это ожидаемый путь локальной разработки.
+Пакет этого репозитория приватный (`lanzorouter-app`), поэтому запуск из исходников/Docker — это ожидаемый путь локальной разработки.
 
 ```bash
 cp .env.example .env
@@ -118,12 +118,12 @@ URL по умолчанию:
 
 <div align="center">
   
-### 📺 Полное руководство по настройке - ZevaiRouter + Claude Code БЕСПЛАТНО
+### 📺 Полное руководство по настройке - LanzoRouter + Claude Code БЕСПЛАТНО
   
-[![Настройка ZevaiRouter + Claude Code](https://img.youtube.com/vi/raEyZPg5xE0/maxresdefault.jpg)](https://www.youtube.com/watch?v=raEyZPg5xE0)
+[![Настройка LanzoRouter + Claude Code](https://img.youtube.com/vi/raEyZPg5xE0/maxresdefault.jpg)](https://www.youtube.com/watch?v=raEyZPg5xE0)
 
 **🎬 Полное пошаговое руководство:**
-- ✅ Установка и настройка ZevaiRouter
+- ✅ Установка и настройка LanzoRouter
 - ✅ Настройка Claude Sonnet 4.5 БЕСПЛАТНО
 - ✅ Интеграция с Claude Code
 - ✅ Тестирование кода вживую
@@ -138,7 +138,7 @@ URL по умолчанию:
 
 ## 🛠️ Поддерживаемые CLI-инструменты
 
-ZevaiRouter бесшовно работает со всеми основными AI-инструментами для кодинга:
+LanzoRouter бесшовно работает со всеми основными AI-инструментами для кодинга:
 
 <div align="center">
   <table>
@@ -389,7 +389,7 @@ Combo: "my-coding-stack"
 
 Бесшовная трансляция между форматами:
 - **OpenAI** ↔ **Claude** ↔ **Gemini** ↔ **OpenAI Responses**
-- Ваш CLI-инструмент отправляет формат OpenAI → ZevaiRouter транслирует → Провайдер получает родной формат
+- Ваш CLI-инструмент отправляет формат OpenAI → LanzoRouter транслирует → Провайдер получает родной формат
 - Работает с любым инструментом, поддерживающим пользовательский эндпоинт OpenAI
 
 ### 👥 Поддержка нескольких аккаунтов
@@ -443,13 +443,13 @@ Combo: "my-coding-stack"
 > **💡 ВАЖНО - Понимание «Затрат» на панели управления:**
 > 
 > «Затраты», показанные в Аналитике использования, предназначены **только для отслеживания и сравнения**. 
-> Сам ZevaiRouter **никогда ничего не взимает** с вас. Вы платите напрямую провайдерам (если используете платные сервисы).
+> Сам LanzoRouter **никогда ничего не взимает** с вас. Вы платите напрямую провайдерам (если используете платные сервисы).
 > 
 > **Пример:** Если на панели показано «общие затраты $290» при использовании моделей iFlow, это представляет 
 > сумму, которую вы заплатили бы при прямом использовании платного API. Ваши фактические затраты = **$0** (iFlow бесплатен без ограничений).
 > 
 > Считайте это «трекером экономии», показывающим, сколько вы экономите, используя бесплатные модели или 
-> маршрутизацию через ZevaiRouter!
+> маршрутизацию через LanzoRouter!
 
 ### 🌐 Развёртывание где угодно
 
@@ -481,15 +481,15 @@ Combo: "my-coding-stack"
 
 ---
 
-### 📊 Понимание затрат и оплаты в ZevaiRouter
+### 📊 Понимание затрат и оплаты в LanzoRouter
 
-**Реальность оплаты ZevaiRouter:**
+**Реальность оплаты LanzoRouter:**
 
-✅ **Софт ZevaiRouter = БЕСПЛАТНО навсегда** (открытый код, никогда не взимает плату)  
+✅ **Софт LanzoRouter = БЕСПЛАТНО навсегда** (открытый код, никогда не взимает плату)  
 ✅ **«Затраты» на панели = Только для отображения/отслеживания** (не реальный счёт)  
 ✅ **Вы платите напрямую провайдерам** (подписка или плата за API)  
 ✅ **БЕСПЛАТНЫЕ провайдеры остаются БЕСПЛАТНЫМИ** (iFlow, Kiro, Qwen = $0 без ограничений)  
-❌ **ZevaiRouter никогда не выставляет счёт** и не списывает с вашей карты
+❌ **LanzoRouter никогда не выставляет счёт** и не списывает с вашей карты
 
 **Как работает отображение затрат:**
 
@@ -510,9 +510,9 @@ Combo: "my-coding-stack"
 
 **Правила оплаты:**
 - **Провайдеры подписки** (Claude Code, Codex): Платите им напрямую через их сайт
-- **Дешёвые провайдеры** (GLM, MiniMax): Платите им напрямую, ZevaiRouter только маршрутизирует
+- **Дешёвые провайдеры** (GLM, MiniMax): Платите им напрямую, LanzoRouter только маршрутизирует
 - **БЕСПЛАТНЫЕ провайдеры** (iFlow, Kiro, Qwen): Действительно бесплатны навсегда, без скрытых платежей
-- **ZevaiRouter**: Никогда ничего не взимает, никогда
+- **LanzoRouter**: Никогда ничего не взимает, никогда
 
 ---
 
@@ -587,7 +587,7 @@ Combo: "openclaw-free"
 <details>
 <summary><b>📊 Почему моя панель показывает высокие затраты?</b></summary>
 
-Панель отслеживает ваше использование токенов и показывает **оценочные затраты**, как если бы вы напрямую использовали платный API. Это **не реальная оплата** — это справка, показывающая, сколько вы экономите, используя бесплатные модели или существующие подписки через ZevaiRouter.
+Панель отслеживает ваше использование токенов и показывает **оценочные затраты**, как если бы вы напрямую использовали платный API. Это **не реальная оплата** — это справка, показывающая, сколько вы экономите, используя бесплатные модели или существующие подписки через LanzoRouter.
 
 **Пример:**
 - **Панель показывает:** «Общие затраты $290»
@@ -600,16 +600,16 @@ Combo: "openclaw-free"
 </details>
 
 <details>
-<summary><b>💳 Взимает ли с меня плату ZevaiRouter?</b></summary>
+<summary><b>💳 Взимает ли с меня плату LanzoRouter?</b></summary>
 
-**Нет.** ZevaiRouter — это бесплатное ПО с открытым кодом, работающее на вашем собственном компьютере. Оно никогда ничего с вас не взимает.
+**Нет.** LanzoRouter — это бесплатное ПО с открытым кодом, работающее на вашем собственном компьютере. Оно никогда ничего с вас не взимает.
 
 **Вы платите только:**
 - ✅ **Провайдерам подписки** (Claude Code $20/мес, Codex $20-200/мес) → Платите им напрямую на их сайте
-- ✅ **Дешёвым провайдерам** (GLM, MiniMax) → Платите им напрямую, ZevaiRouter только маршрутизирует ваши запросы
-- ❌ **Самому ZevaiRouter** → **Никогда ничего не взимает, никогда**
+- ✅ **Дешёвым провайдерам** (GLM, MiniMax) → Платите им напрямую, LanzoRouter только маршрутизирует ваши запросы
+- ❌ **Самому LanzoRouter** → **Никогда ничего не взимает, никогда**
 
-ZevaiRouter — это локальный прокси/роутер. У него нет вашей кредитной карты, он не может выставлять счета и не имеет платёжной системы. Это полностью бесплатное ПО.
+LanzoRouter — это локальный прокси/роутер. У него нет вашей кредитной карты, он не может выставлять счета и не имеет платёжной системы. Это полностью бесплатное ПО.
 
 </details>
 
@@ -623,9 +623,9 @@ ZevaiRouter — это локальный прокси/роутер. У него
 - **Kiro**: Бесплатные безлимитные модели Claude через AWS Builder ID  
 - **Qwen**: Бесплатный безлимитный доступ к моделям Qwen через аутентификацию устройства
 
-ZevaiRouter только маршрутизирует ваши запросы к ним — никаких «ловушек» или будущих платежей. Это действительно бесплатные сервисы, а ZevaiRouter облегчает их использование с поддержкой резервирования.
+LanzoRouter только маршрутизирует ваши запросы к ним — никаких «ловушек» или будущих платежей. Это действительно бесплатные сервисы, а LanzoRouter облегчает их использование с поддержкой резервирования.
 
-**Примечание:** Некоторые провайдеры подписки (Antigravity, GitHub Copilot) могут иметь бесплатные пробные периоды, которые позже становятся платными, но об этом чётко уведомляют сами провайдеры, а не ZevaiRouter.
+**Примечание:** Некоторые провайдеры подписки (Antigravity, GitHub Copilot) могут иметь бесплатные пробные периоды, которые позже становятся платными, но об этом чётко уведомляют сами провайдеры, а не LanzoRouter.
 
 </details>
 
@@ -650,7 +650,7 @@ ZevaiRouter только маршрутизирует ваши запросы к
 
 3. **Используйте провайдеров подписки в последнюю очередь:**
    - Только если они у вас уже есть
-   - ZevaiRouter помогает максимизировать их ценность через отслеживание квоты
+   - LanzoRouter помогает максимизировать их ценность через отслеживание квоты
 
 **Результат:** Большинство пользователей могут работать за $0/мес, используя только бесплатные уровни!
 
@@ -659,20 +659,20 @@ ZevaiRouter только маршрутизирует ваши запросы к
 <details>
 <summary><b>📈 Что если моё использование внезапно вырастет?</b></summary>
 
-Умный механизм резервирования ZevaiRouter предотвращает неожиданные расходы:
+Умный механизм резервирования LanzoRouter предотвращает неожиданные расходы:
 
 **Сценарий:** Вы в спринте кодинга и превышаете квоты
 
-**Без ZevaiRouter:**
+**Без LanzoRouter:**
 - ❌ Упёрлись в rate limit → Работа остановилась → Разочарование
 - ❌ Или: Случайно накопили огромный счёт за API
 
-**С ZevaiRouter:**
+**С LanzoRouter:**
 - ✅ Подписка упёрлась в лимит → Авторезервирование на дешёвый уровень
 - ✅ Дешёвый уровень становится дорогим → Авторезервирование на бесплатный уровень
 - ✅ Никогда не прекращаете кодить → Предсказуемая стоимость
 
-**Вы контролируете:** Установите лимиты расходов на каждого провайдера в панели, и ZevaiRouter будет их соблюдать.
+**Вы контролируете:** Установите лимиты расходов на каждого провайдера в панели, и LanzoRouter будет их соблюдать.
 
 </details>
 
@@ -696,7 +696,7 @@ ZevaiRouter только маршрутизирует ваши запросы к
   cc/claude-haiku-4-5-20251001
 ```
 
-**Профи-совет:** Используйте Opus для сложных задач, Sonnet для скорости. ZevaiRouter отслеживает квоту для каждой модели!
+**Профи-совет:** Используйте Opus для сложных задач, Sonnet для скорости. LanzoRouter отслеживает квоту для каждой модели!
 
 ### OpenAI Codex (Plus/Pro)
 
@@ -865,7 +865,7 @@ ZevaiRouter только маршрутизирует ваши запросы к
 ```
 Settings → Models → Advanced:
   OpenAI API Base URL: http://localhost:1997/v1
-  OpenAI API Key: [из панели управления zevairouter]
+  OpenAI API Key: [из панели управления lanzorouter]
   Model: cc/claude-opus-4-6
 ```
 
@@ -878,7 +878,7 @@ Settings → Models → Advanced:
 ```json
 {
   "anthropic_api_base": "http://localhost:1997/v1",
-  "anthropic_api_key": "your-zevairouter-api-key"
+  "anthropic_api_key": "your-lanzorouter-api-key"
 }
 ```
 
@@ -886,7 +886,7 @@ Settings → Models → Advanced:
 
 ```bash
 export OPENAI_BASE_URL="http://localhost:1997"
-export OPENAI_API_KEY="your-zevairouter-api-key"
+export OPENAI_API_KEY="your-lanzorouter-api-key"
 
 codex "ваш промпт"
 ```
@@ -906,15 +906,15 @@ codex "ваш промпт"
   "agents": {
     "defaults": {
       "model": {
-        "primary": "zevairouter/if/glm-4.7"
+        "primary": "lanzorouter/if/glm-4.7"
       }
     }
   },
   "models": {
     "providers": {
-      "zevairouter": {
+      "lanzorouter": {
         "baseUrl": "http://127.0.0.1:1997/v1",
-        "apiKey": "sk_zevairouter",
+        "apiKey": "sk_lanzorouter",
         "api": "openai-completions",
         "models": [
           {
@@ -928,7 +928,7 @@ codex "ваш промпт"
 }
 ```
 
-> **Примечание:** OpenClaw работает только с локальным ZevaiRouter. Используйте `127.0.0.1` вместо `localhost`, чтобы избежать проблем с разрешением имён.
+> **Примечание:** OpenClaw работает только с локальным LanzoRouter. Используйте `127.0.0.1` вместо `localhost`, чтобы избежать проблем с разрешением имён.
 
 ### Cline / Continue / RooCode
 
@@ -948,20 +948,20 @@ Model: cc/claude-opus-4-6
 
 ```bash
 # Clone and install
-git clone https://github.com/Verifiedlabs/zevairouter.git
-cd zevairouter
+git clone https://github.com/jonni31/lanzorouter.git
+cd lanzorouter
 npm install
 npm run build
 
 # Configure
 export JWT="your-secure-secret-change-this"
 export INITIAL_PASSWORD="your-password"
-export DATA_DIR="/var/lib/zevairouter"
+export DATA_DIR="/var/lib/lanzorouter"
 export PORT="1997"
 export HOSTNAME="0.0.0.0"
 export NODE_ENV="production"
 export NEXT_PUBLIC_BASE_URL="http://localhost:1997"
-export NEXT_PUBLIC_CLOUD_URL="https://github.com/Verifiedlabs/zevairouter"
+export NEXT_PUBLIC_CLOUD_URL="https://github.com/jonni31/lanzorouter"
 export API_KEY_SECRET="endpoint-proxy-api-key-secret"
 export MACHINE_ID_SALT="endpoint-proxy-salt"
 
@@ -970,7 +970,7 @@ npm run start
 
 # Or use PM2
 npm install -g pm2
-pm2 start --name zevairouter -- start
+pm2 start --name lanzorouter -- start
 pm2 save
 pm2 startup
 ```
@@ -979,28 +979,28 @@ pm2 startup
 
 ```bash
 # Build image (from repository root)
-docker build -t zevairouter .
+docker build -t lanzorouter .
 
 # Run container (command used in current setup)
 docker run -d \
-  --name zevairouter \
+  --name lanzorouter \
   -p 1997:1997 \
-  --env-file /root/dev/zevairouter/.env \
-  -v zevairouter-data:/app/data \
-  -v zevairouter-usage:/root/.zevairouter \
-  zevairouter
+  --env-file /root/dev/lanzorouter/.env \
+  -v lanzorouter-data:/app/data \
+  -v lanzorouter-usage:/root/.lanzorouter \
+  lanzorouter
 ```
 
 Портативная команда (если вы уже в корне репозитория):
 
 ```bash
 docker run -d \
-  --name zevairouter \
+  --name lanzorouter \
   -p 1997:1997 \
   --env-file ./.env \
-  -v zevairouter-data:/app/data \
-  -v zevairouter-usage:/root/.zevairouter \
-  zevairouter
+  -v lanzorouter-data:/app/data \
+  -v lanzorouter-usage:/root/.lanzorouter \
+  lanzorouter
 ```
 
 Значения по умолчанию контейнера:
@@ -1010,25 +1010,25 @@ docker run -d \
 Полезные команды:
 
 ```bash
-docker logs -f zevairouter
-docker restart zevairouter
-docker stop zevairouter && docker rm zevairouter
+docker logs -f lanzorouter
+docker restart lanzorouter
+docker stop lanzorouter && docker rm lanzorouter
 ```
 
 ### Переменные окружения
 
 | Переменная | По умолчанию | Описание |
 |----------|---------|-------------|
-| `JWT_SECRET` | Автогенерация (`~/.zevairouter/jwt-secret`) | Секрет подписи JWT для cookie аутентификации панели (задайте для общего доступа между инстансами) |
+| `JWT_SECRET` | Автогенерация (`~/.lanzorouter/jwt-secret`) | Секрет подписи JWT для cookie аутентификации панели (задайте для общего доступа между инстансами) |
 | `INITIAL_PASSWORD` | `123456` | Пароль первого входа при отсутствии сохранённого хеша |
-| `DATA_DIR` | `~/.zevairouter` | Расположение основной БД приложения (`db.json`) |
+| `DATA_DIR` | `~/.lanzorouter` | Расположение основной БД приложения (`db.json`) |
 | `PORT` | framework default | Порт сервиса (`1997` в примерах) |
 | `HOSTNAME` | framework default | Bind host (Docker по умолчанию `0.0.0.0`) |
 | `NODE_ENV` | runtime default | Установите `production` для развёртывания |
 | `BASE_URL` | `http://localhost:1997` | Внутренний серверный базовый URL для задач облачной синхронизации |
-| `CLOUD_URL` | `https://github.com/Verifiedlabs/zevairouter` | Серверный базовый URL эндпоинта облачной синхронизации |
+| `CLOUD_URL` | `https://github.com/jonni31/lanzorouter` | Серверный базовый URL эндпоинта облачной синхронизации |
 | `NEXT_PUBLIC_BASE_URL` | `http://localhost:3000` | Обратно совместимый/публичный базовый URL (приоритет `BASE_URL` для серверного рантайма) |
-| `NEXT_PUBLIC_CLOUD_URL` | `https://github.com/Verifiedlabs/zevairouter` | Обратно совместимый/публичный облачный URL (приоритет `CLOUD_URL` для серверного рантайма) |
+| `NEXT_PUBLIC_CLOUD_URL` | `https://github.com/jonni31/lanzorouter` | Обратно совместимый/публичный облачный URL (приоритет `CLOUD_URL` для серверного рантайма) |
 | `API_KEY_SECRET` | `endpoint-proxy-api-key-secret` | HMAC-секрет для генерируемых API-ключей |
 | `MACHINE_ID_SALT` | `endpoint-proxy-salt` | Соль для стабильного хеширования ID машины |
 | `ENABLE_REQUEST_LOGS` | `false` | Включить лог запросов/ответов в `logs/` |
@@ -1045,9 +1045,9 @@ docker stop zevairouter && docker rm zevairouter
 ### Runtime-файлы и хранилище
 
 - Основное состояние приложения: `${DATA_DIR}/db.json` (провайдеры, комбо, alias, ключи, настройки), управляется `src/lib/localDb.js`.
-- История использования и логи: `~/.zevairouter/usage.json` и `~/.zevairouter/log.txt`, управляется `src/lib/usageDb.js`.
+- История использования и логи: `~/.lanzorouter/usage.json` и `~/.lanzorouter/log.txt`, управляется `src/lib/usageDb.js`.
 - Опциональные логи запросов/транслятора: `<repo>/logs/...` при `ENABLE_REQUEST_LOGS=true`.
-- Хранилище использования следует логике пути `~/.zevairouter` и независимо от `DATA_DIR`.
+- Хранилище использования следует логике пути `~/.lanzorouter` и независимо от `DATA_DIR`.
 
 </details>
 
@@ -1109,7 +1109,7 @@ docker stop zevairouter && docker rm zevairouter
 - Добавьте комбо: `cc/claude-opus-4-6 → glm/glm-4.7 → if/kimi-k2-thinking`
 
 **OAuth-токен истёк**
-- Автообновление ZevaiRouter
+- Автообновление LanzoRouter
 - Если проблема сохраняется: Панель управления → Провайдеры → Переподключить
 
 **Высокие затраты**
@@ -1122,14 +1122,14 @@ docker stop zevairouter && docker rm zevairouter
 
 **Ошибки облачной синхронизации**
 - Убедитесь, что `BASE_URL` указывает на ваш работающий инстанс (например, `http://localhost:1997`)
-- Убедитесь, что `CLOUD_URL` указывает на ожидаемый облачный эндпоинт (например, `https://github.com/Verifiedlabs/zevairouter`)
+- Убедитесь, что `CLOUD_URL` указывает на ожидаемый облачный эндпоинт (например, `https://github.com/jonni31/lanzorouter`)
 - По возможности держите значения `NEXT_PUBLIC_*` согласованными с серверными значениями.
 
 **Облачный эндпоинт `stream=false` возвращает 500 (`Unexpected token 'd'...`)**
-- Симптом обычно появляется на публичном облачном эндпоинте (`https://github.com/Verifiedlabs/zevairouter/v1`) для непотоковых (non-streaming) вызовов.
+- Симптом обычно появляется на публичном облачном эндпоинте (`https://github.com/jonni31/lanzorouter/v1`) для непотоковых (non-streaming) вызовов.
 - Корневая причина: upstream возвращает SSE-payload (`data: ...`), тогда как клиент ожидает JSON.
 - Обходное решение: используйте `stream=true` для прямых вызовов в облако.
-- Локальный рантайм ZevaiRouter включает резервирование SSE→JSON для непотоковых вызовов, когда upstream возвращает `text/event-stream`.
+- Локальный рантайм LanzoRouter включает резервирование SSE→JSON для непотоковых вызовов, когда upstream возвращает `text/event-stream`.
 
 **Облако сообщает о подключении, но запрос всё равно падает с `Invalid API key`**
 - Создайте новый ключ в локальной панели (`/api/keys`) и запустите облачную синхронизацию (`Enable Cloud`, затем `Sync Now`).
@@ -1200,7 +1200,7 @@ Authorization: Bearer your-api-key
 - `tester/security/test-docker-hardening.sh`
   - Собирает Docker-образ и проверяет hardening-проверки (`/api/cloud/auth` auth guard, `REQUIRE_API_KEY`, безопасное поведение cookie аутентификации).
 - `tester/security/test-cloud-openai-compatible.sh`
-  - Отправляет OpenAI-совместимый запрос напрямую на облачный эндпоинт (`https://github.com/Verifiedlabs/zevairouter/v1/chat/completions`) с указанной моделью/ключом.
+  - Отправляет OpenAI-совместимый запрос напрямую на облачный эндпоинт (`https://github.com/jonni31/lanzorouter/v1/chat/completions`) с указанной моделью/ключом.
 - `tester/security/test-cloud-sync-and-call.sh`
   - End-to-end процесс: создание локального ключа → включение/синхронизация облака → вызов облачного эндпоинта с повтором.
   - Включает резервную проверку с `stream=true`, чтобы отличить ошибки аутентификации от проблем разбора потока.
@@ -1220,7 +1220,7 @@ OPENAI_API_KEY="your-cloud-key" bash tester/security/test-cloud-openai-compatibl
 
 - Локально (`http://127.0.0.1:1997/v1/chat/completions`): работает с `stream=false` и `stream=true`.
 - Docker-рантайм (тот же API-путь, экспонируемый контейнером): hardening-проверки проходят, cloud auth guard работает, строгий режим API-ключа работает при включении.
-- Публичный облачный эндпоинт (`https://github.com/Verifiedlabs/zevairouter/v1/chat/completions`):
+- Публичный облачный эндпоинт (`https://github.com/jonni31/lanzorouter/v1/chat/completions`):
   - `stream=true`: ожидается успех (возвращает SSE-чанки).
   - `stream=false`: может падать с `500` + ошибкой разбора (`Unexpected token 'd'`), когда upstream возвращает SSE-контент для непотокового клиентского пути.
 
@@ -1258,23 +1258,23 @@ OPENAI_API_KEY="your-cloud-key" bash tester/security/test-cloud-openai-compatibl
 
 ## 📧 Поддержка
 
-- **Сайт**: [github.com/Verifiedlabs/zevairouter](https://github.com/Verifiedlabs/zevairouter)
-- **GitHub**: [github.com/Verifiedlabs/zevairouter](https://github.com/Verifiedlabs/zevairouter)
-- **Issues**: [github.com/Verifiedlabs/zevairouter/issues](https://github.com/Verifiedlabs/zevairouter/issues)
+- **Сайт**: [github.com/jonni31/lanzorouter](https://github.com/jonni31/lanzorouter)
+- **GitHub**: [github.com/jonni31/lanzorouter](https://github.com/jonni31/lanzorouter)
+- **Issues**: [github.com/jonni31/lanzorouter/issues](https://github.com/jonni31/lanzorouter/issues)
 
 ---
 
 ## 👥 Контрибьюторы
 
-Спасибо всем, кто помогает делать ZevaiRouter лучше!
+Спасибо всем, кто помогает делать LanzoRouter лучше!
 
-[![Contributors](https://contrib.rocks/image?repo=Verifiedlabs/zevairouter&max=100&columns=20&anon=1)](https://github.com/Verifiedlabs/zevairouter/graphs/contributors)
+[![Contributors](https://contrib.rocks/image?repo=jonni31/lanzorouter&max=100&columns=20&anon=1)](https://github.com/jonni31/lanzorouter/graphs/contributors)
 
 ---
 
 ## 📊 Star Chart
 
-[![Star Chart](https://starchart.cc/Verifiedlabs/zevairouter.svg?variant=adaptive)](https://starchart.cc/Verifiedlabs/zevairouter)
+[![Star Chart](https://starchart.cc/jonni31/lanzorouter.svg?variant=adaptive)](https://starchart.cc/jonni31/lanzorouter)
 
 ### Как внести вклад
 
@@ -1284,13 +1284,13 @@ OPENAI_API_KEY="your-cloud-key" bash tester/security/test-cloud-openai-compatibl
 4. Запушьте в ветку (`git push origin feature/amazing-feature`)
 5. Откройте Pull Request
 
-См. [Pull Requests](https://github.com/Verifiedlabs/zevairouter/pulls) для подробных инструкций.
+См. [Pull Requests](https://github.com/jonni31/lanzorouter/pulls) для подробных инструкций.
 
 ---
 
 ## 🔀 Форки
 
-**[OmniRoute](https://github.com/diegosouzapw/OmniRoute)** — Полнофункциональный TypeScript-форк ZevaiRouter. Добавляет 36+ провайдеров, авторезервирование на 4 уровнях, мультимодальный API (изображения, embedding, аудио, TTS), circuit breaker, семантическое кеширование, оценку LLM и доработанную панель. 368+ юнит-тестов. Доступен через npm.
+**[OmniRoute](https://github.com/diegosouzapw/OmniRoute)** — Полнофункциональный TypeScript-форк LanzoRouter. Добавляет 36+ провайдеров, авторезервирование на 4 уровнях, мультимодальный API (изображения, embedding, аудио, TTS), circuit breaker, семантическое кеширование, оценку LLM и доработанную панель. 368+ юнит-тестов. Доступен через npm.
 
 ---
 

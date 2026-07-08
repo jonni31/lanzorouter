@@ -1,4 +1,4 @@
-// Ensure Playwright + Chromium are usable at runtime. `npm i -g zevairouter`
+// Ensure Playwright + Chromium are usable at runtime. `npm i -g lanzorouter`
 // installs the playwright npm package but does NOT trigger its postinstall
 // browser download under all package managers, so the first bulk-import
 // attempt fails with "Executable doesn't exist at .../chrome-headless-shell".

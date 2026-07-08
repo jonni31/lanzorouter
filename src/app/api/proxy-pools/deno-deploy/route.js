@@ -69,7 +69,7 @@ export async function POST(request) {
       headers,
       body: JSON.stringify({
         slug: projectName,
-        labels: { "custom.kind": "zevai-relay" },
+        labels: { "custom.kind": "lanzo-relay" },
         config: {
           install: "deno install",
           runtime: {

@@ -16,8 +16,8 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "ZevaiRouter - Provider Automation & Quota Tracking",
-  description: "ZevaiRouter - provider automation, multi-account workflows, and quota tracking.",
+  title: "LanzoRouter - Provider Automation & Quota Tracking",
+  description: "LanzoRouter - provider automation, multi-account workflows, and quota tracking.",
   icons: {
     icon: "/favicon.svg",
   },

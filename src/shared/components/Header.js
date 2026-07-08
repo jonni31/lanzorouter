@@ -107,7 +107,7 @@ const getPageInfo = (pathname) => {
   if (pathname.includes("/mitm"))
     return {
       title: "MITM Proxy",
-      description: "Intercept CLI tool traffic and route through ZevaiRouter",
+      description: "Intercept CLI tool traffic and route through LanzoRouter",
       icon: "security",
       breadcrumbs: [],
     };
@@ -128,7 +128,7 @@ const getPageInfo = (pathname) => {
   if (pathname.includes("/skills"))
     return {
       title: "Agent Skills",
-      description: "Copy a link and paste to your AI to use ZevaiRouter — no install needed",
+      description: "Copy a link and paste to your AI to use LanzoRouter — no install needed",
       icon: "extension",
       breadcrumbs: [],
     };

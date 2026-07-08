@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-// Postinstall: warm-up runtime deps into ~/.zevai/runtime so the first
-// `zevai` start doesn't need network. Failure here is non-fatal —
+// Postinstall: warm-up runtime deps into ~/.lanzo/runtime so the first
+// `lanzo` start doesn't need network. Failure here is non-fatal —
 // cli.js will retry at runtime if anything is missing.
 const path = require("path");
 const fs = require("fs");
@@ -11,29 +11,29 @@ const { ensurePlaywrightRuntime, getRuntimeNodeModules: getRtNm } = require("./p
 
 try {
   ensureSqliteRuntime({ silent: false });
-  console.log("[zevai] runtime SQLite deps ready");
+  console.log("[lanzo] runtime SQLite deps ready");
 } catch (e) {
-  console.warn(`[zevai] runtime warm-up skipped: ${e.message}`);
+  console.warn(`[lanzo] runtime warm-up skipped: ${e.message}`);
 }
 
 try {
   ensureTrayRuntime({ silent: false });
 } catch (e) {
-  console.warn(`[zevai] tray runtime skipped: ${e.message}`);
+  console.warn(`[lanzo] tray runtime skipped: ${e.message}`);
 }
 
 try {
   const pw = ensurePlaywrightRuntime({ silent: false });
   if (pw.ok) {
-    console.log("[zevai] Playwright + Chromium ready");
+    console.log("[lanzo] Playwright + Chromium ready");
     // Next.js standalone server can only resolve playwright from cli/app/node_modules.
     // npm strips node_modules on publish, so we re-link after install.
     linkPlaywrightToStandalone();
   } else {
-    console.warn(`[zevai] Playwright setup skipped: ${pw.error?.message || "unknown"}`);
+    console.warn(`[lanzo] Playwright setup skipped: ${pw.error?.message || "unknown"}`);
   }
 } catch (e) {
-  console.warn(`[zevai] Playwright setup skipped: ${e.message}`);
+  console.warn(`[lanzo] Playwright setup skipped: ${e.message}`);
 }
 
 function linkPlaywrightToStandalone() {
@@ -49,7 +49,7 @@ function linkPlaywrightToStandalone() {
       if (fs.existsSync(dest)) fs.rmSync(dest, { recursive: true, force: true });
       fs.cpSync(src, dest, { recursive: true });
     }
-    console.log("[zevai] Playwright linked to standalone bundle");
+    console.log("[lanzo] Playwright linked to standalone bundle");
   } catch (e) {
     // Non-fatal — automation will show manual install message
   }

@@ -56,7 +56,7 @@ const OAUTH_TEST_CONFIG = {
     method: "GET",
     authHeader: "Authorization",
     authPrefix: "Bearer ",
-    extraHeaders: { "User-Agent": "ZevaiRouter", "Accept": "application/vnd.github+json" },
+    extraHeaders: { "User-Agent": "LanzoRouter", "Accept": "application/vnd.github+json" },
   },
   iflow: {
     // iFlow getUserInfo requires accessToken as query param, not header

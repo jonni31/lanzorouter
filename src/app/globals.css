@@ -496,7 +496,7 @@ button {
 }
 
 /* ============================================================
-   ZevaiRouter — 3D depth / glass card treatment (lightweight, CSS-only)
+   LanzoRouter — 3D depth / glass card treatment (lightweight, CSS-only)
    Applied globally via the shared <Card> component (.card-3d)
    ============================================================ */
 .card-3d {

@@ -67,14 +67,14 @@ async function startTerminalUI(port) {
   // Configure API client
   api.configure({ port });
 
-  const basePath = ["ZevaiRouter"];
+  const basePath = ["LanzoRouter"];
 
   // Prime header cache before first render
   await refreshHeaderBg(port);
 
   // Main menu
   await showMenuWithBack({
-    title: "📡 ZevaiRouter Terminal UI",
+    title: "📡 LanzoRouter Terminal UI",
     breadcrumb: basePath,
     headerContent: () => getHeader(port),
     items: [

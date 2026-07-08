@@ -1,6 +1,6 @@
 // Ensure camoufox-js (optional stealth Firefox engine) is installed AND its
 // browser binary is downloaded. The package is in optionalDependencies, so
-// `npm install -g zevairouter` may legitimately ship without it (e.g. when npm
+// `npm install -g lanzorouter` may legitimately ship without it (e.g. when npm
 // skipped optional install on a constrained network). When the user picks
 // Camoufox in the bulk-import modal we install lazily \u2014 same shape as the
 // sqlite/playwright runtime helpers \u2014 instead of failing the worker.
@@ -25,7 +25,7 @@ const nodeRequire =
 
 // A require() anchored at the runtime node_modules dir. createRequire is real
 // Node resolution (never touched by webpack), so it reliably loads the lazily
-// installed camoufox-js from ~/.zevai/runtime regardless of the process cwd or
+// installed camoufox-js from ~/.lanzo/runtime regardless of the process cwd or
 // the standalone bundle's module registry.
 function getRuntimeRequire() {
   try {

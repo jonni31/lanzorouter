@@ -3,7 +3,7 @@ const path = require("path");
 const os = require("os");
 const { execSync } = require("child_process");
 
-const APP_NAME = "zevai";
+const APP_NAME = "lanzo";
 const APP_LABEL = "com.9router.autostart";
 
 /**
@@ -280,8 +280,8 @@ function enableLinux(cliPath) {
 
   const desktopContent = `[Desktop Entry]
 Type=Application
-Name=ZevaiRouter
-Comment=ZevaiRouter API Proxy
+Name=LanzoRouter
+Comment=LanzoRouter API Proxy
 Exec=${nodePath} ${routerScript} --tray --skip-update
 Hidden=false
 NoDisplay=false

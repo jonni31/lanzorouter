@@ -168,7 +168,7 @@ async function getCodeBuddyUsage(accessToken, providerSpecificData = {}, proxyOp
   // Prefer the IDE OAuth token; fall back to the API key (chat key) when no
   // OAuth token is stored. The billing/meter endpoint on both the global (.ai)
   // and China (.cn) editions accepts the API key via Authorization: Bearer +
-  // X-Api-Key, so even zevairouter-generated chat keys are tried. If the
+  // X-Api-Key, so even lanzorouter-generated chat keys are tried. If the
   // endpoint rejects the key (401/403) we fall back to the local-router
   // tracking message instead of throwing.
   const isGeneratedKey = providerSpecificData?.authMode === "generated-api-key";
@@ -188,7 +188,7 @@ async function getCodeBuddyUsage(accessToken, providerSpecificData = {}, proxyOp
   // cannot read upstream quota — e.g. a generated key the upstream rejects.
   const chatKeyFallback = {
     plan: "CodeBuddy",
-    message: "CodeBuddy chat key active. Upstream quota is unavailable without a valid IDE OAuth token; use ZevaiRouter Usage for local request and token tracking.",
+    message: "CodeBuddy chat key active. Upstream quota is unavailable without a valid IDE OAuth token; use LanzoRouter Usage for local request and token tracking.",
     quotas: {},
     authMode: isGeneratedKey ? "generated-api-key" : "api-key",
     trackingMode: "local-router",
@@ -216,7 +216,7 @@ async function getCodeBuddyUsage(accessToken, providerSpecificData = {}, proxyOp
       if (authMode === "oauth") {
         return {
           plan: "CodeBuddy",
-          message: `CodeBuddy IDE OAuth token was rejected (${response.status}). Upstream quota is unavailable; use ZevaiRouter Usage for local request and token tracking.`,
+          message: `CodeBuddy IDE OAuth token was rejected (${response.status}). Upstream quota is unavailable; use LanzoRouter Usage for local request and token tracking.`,
           quotas: {},
           authMode: "oauth-rejected",
           trackingMode: "local-router",

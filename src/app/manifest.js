@@ -1,7 +1,7 @@
 export default function manifest() {
   return {
-    name: 'ZevaiRouter - Provider Automation & Quota Tracking',
-    short_name: 'ZevaiRouter',
+    name: 'LanzoRouter - Provider Automation & Quota Tracking',
+    short_name: 'LanzoRouter',
     description: 'Self-hosted AI router with an OpenAI-compatible API, provider automation, multi-account workflows, and quota tracking.',
     start_url: '/',
     display: 'standalone',
