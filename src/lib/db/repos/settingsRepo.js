@@ -42,6 +42,7 @@ const DEFAULT_SETTINGS = {
   providerAutoClean: {},
   providerAutoFix: {},
   providerRemoveTokenLimits: {},
+  maxAutoContinue: 20,
 };
 
 async function readRaw() {

@@ -32,7 +32,7 @@ import { wrapWithAutoContinue, makeContinuationStream } from "./chatCore/autoCon
  * @param {object} options.credentials - Provider credentials
  * @param {string} options.sourceFormatOverride - Override detected source format (e.g. "openai-responses")
  */
-export async function handleChatCore({ body, modelInfo, credentials, log, onCredentialsRefreshed, onRequestSuccess, onDisconnect, clientRawRequest, connectionId, userAgent, apiKey, ccFilterNaming, rtkEnabled, cavemanEnabled, cavemanLevel, contextInjectionEnabled, ponytailEnabled, ponytailLevel, sourceFormatOverride, providerThinking, removeProviderTokenLimits }) {
+export async function handleChatCore({ body, modelInfo, credentials, log, onCredentialsRefreshed, onRequestSuccess, onDisconnect, clientRawRequest, connectionId, userAgent, apiKey, ccFilterNaming, rtkEnabled, cavemanEnabled, cavemanLevel, contextInjectionEnabled, ponytailEnabled, ponytailLevel, sourceFormatOverride, providerThinking, removeProviderTokenLimits, maxAutoContinue }) {
   const { provider, model } = modelInfo;
   const requestStartTime = Date.now();
 
@@ -377,6 +377,7 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
   if (removeProviderTokenLimits && streamResult?.response?.body) {
     const wrappedBody = wrapWithAutoContinue(streamResult.response.body, {
       log,
+      maxContinuations: maxAutoContinue || 20,
       makeContinuationResponse: (accContent) => makeContinuationStream(accContent, {
         body, sourceFormat, targetFormat, upstreamModel,
         credentials, provider, executor, signal: streamController.signal,

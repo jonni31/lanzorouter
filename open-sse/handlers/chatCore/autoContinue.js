@@ -16,7 +16,7 @@ import { createSSETransformStreamWithLogger, createPassthroughStreamWithLogger }
 import { needsTranslation } from "../../translator/index.js";
 import { FORMATS } from "../../translator/formats.js";
 
-const MAX_CONTINUATIONS = 5;
+const DEFAULT_MAX_CONTINUATIONS = 20;
 const CONTINUE_PROMPT = "Continue exactly where you left off. Do not repeat any previous content.";
 
 /**
@@ -28,7 +28,8 @@ const CONTINUE_PROMPT = "Continue exactly where you left off. Do not repeat any 
  * @param {object} opts.log - Logger
  * @returns {ReadableStream} Wrapped stream with auto-continue
  */
-export function wrapWithAutoContinue(originalBody, { makeContinuationResponse, log }) {
+export function wrapWithAutoContinue(originalBody, { makeContinuationResponse, log, maxContinuations }) {
+  const MAX_CONTINUATIONS = maxContinuations || DEFAULT_MAX_CONTINUATIONS;
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
   let reader = originalBody.getReader();

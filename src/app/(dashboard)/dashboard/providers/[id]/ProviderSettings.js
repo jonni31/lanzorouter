@@ -55,11 +55,31 @@ export default function ProviderSettings({ providerId }) {
     }
   }
 
+  async function updateGlobalSetting(key, value) {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [key]: value })
+      });
+      if (!res.ok) throw new Error("Failed to update settings");
+      const updated = await res.json();
+      setSettings(updated);
+    } catch (err) {
+      console.error("Failed to update setting:", err);
+      alert(`Failed to update setting: ${err.message}`);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (loading) return null;
 
   const autoCleanEnabled = settings?.providerAutoClean?.[providerId] || false;
   const autoFixEnabled = settings?.providerAutoFix?.[providerId] || false;
   const removeTokenLimitsEnabled = settings?.providerRemoveTokenLimits?.[providerId] || false;
+  const maxAutoContinue = settings?.maxAutoContinue ?? 20;
 
   return (
     <Card className="mb-6">
@@ -108,6 +128,27 @@ export default function ProviderSettings({ providerId }) {
               disabled={saving}
             />
           </div>
+
+          {removeTokenLimitsEnabled && (
+            <div className="flex items-center justify-between pl-4 border-l-2 border-sky-500/30">
+              <div>
+                <div className="font-medium">Max Auto-Continue</div>
+                <div className="text-sm text-text-muted">
+                  How many times to auto-continue when output is truncated
+                </div>
+              </div>
+              <select
+                value={maxAutoContinue}
+                onChange={(e) => updateGlobalSetting("maxAutoContinue", Number(e.target.value))}
+                disabled={saving}
+                className="bg-bg-secondary border border-border rounded px-3 py-1.5 text-sm"
+              >
+                {[5, 10, 15, 20, 25, 30, 35, 40, 45, 50].map((n) => (
+                  <option key={n} value={n}>{n}x</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {saving && (
