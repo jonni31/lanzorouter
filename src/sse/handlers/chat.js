@@ -2,6 +2,7 @@ import "open-sse/index.js";
 
 import { detectErrorPattern, applyAutoFix, logAutoFix } from "@/lib/autoFix.js";
 import {
+  getProviderCredentials,
   clearAccountError,
   markAccountUnavailable,
   extractApiKey,

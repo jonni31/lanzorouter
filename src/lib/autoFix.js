@@ -21,7 +21,7 @@ export function detectErrorPattern(status, error, provider) {
   const errorLower = (error || "").toLowerCase();
 
   // Rate limit (429 or error message contains "rate limit") — fixable by waiting
-  if (status === 429 || errorLower.includes("rate limit") || errorLower.includes("too many requests")) {
+  if (status === 429 || errorLower.includes("rate limit") || errorLower.includes("too many requests") || errorLower.includes("high-frequency") || errorLower.includes("non-compliant")) {
     // Check if 429 actually means credits exhausted (not a real rate limit)
     if (errorLower.includes("exhausted") || errorLower.includes("insufficient") || errorLower.includes("quota")) {
       return {
