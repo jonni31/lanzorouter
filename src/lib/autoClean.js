@@ -1,12 +1,48 @@
 /**
  * Auto-clean zero credit connections
- * Deletes connections with balance <= 0 when provider has auto-clean enabled.
+ * When provider has auto-clean enabled, handles connections with balance <= 0.
+ * Supports two actions:
+ *   - "delete"  → permanently remove the connection
+ *   - "disable" → set isActive = false (can be re-enabled later)
  * Cross-references both connection fields AND quotaCache snapshots.
  */
 
 import { getSettings } from "./db/repos/settingsRepo.js";
-import { getProviderConnections, deleteProviderConnection } from "./db/repos/connectionsRepo.js";
+import { getProviderConnections, deleteProviderConnection, updateProviderConnection } from "./db/repos/connectionsRepo.js";
 import { getAllQuotaSnapshots } from "./db/repos/quotaCacheRepo.js";
+
+/**
+ * Get the auto-clean action for a provider: "delete" or "disable"
+ * Default is "delete" for backward compatibility.
+ */
+async function getAutoCleanAction(provider) {
+  const settings = await getSettings();
+  const actions = settings.providerAutoCleanAction || {};
+  return actions[provider] || "delete";
+}
+
+/**
+ * Apply the clean action to a connection
+ * @param {string} connId - Connection ID
+ * @param {string} connName - Display name
+ * @param {string} provider - Provider ID
+ * @param {string} action - "delete" or "disable"
+ * @param {string} reason - Why it was cleaned
+ */
+async function applyCleanAction(connId, connName, provider, action, reason) {
+  if (action === "disable") {
+    await updateProviderConnection(connId, {
+      isActive: false,
+      testStatus: "unavailable",
+      autoDisabledAt: new Date().toISOString(),
+      autoDisabledReason: reason,
+    });
+    console.log(`[AUTO-CLEAN] Disabled ${provider} connection "${connName}" — ${reason}`);
+  } else {
+    await deleteProviderConnection(connId);
+    console.log(`[AUTO-CLEAN] Deleted ${provider} connection "${connName}" — ${reason}`);
+  }
+}
 
 /**
  * Check if a connection has zero/negative balance using both connection data
@@ -86,18 +122,21 @@ export async function cleanZeroBalanceConnections() {
     if (!enabled) continue;
 
     try {
+      const action = await getAutoCleanAction(provider);
       const connections = await getProviderConnections({ provider });
       
       for (const conn of connections) {
+        // Skip already-disabled connections when action is "disable"
+        if (action === "disable" && !conn.isActive) continue;
+
         const snapshot = snapshotMap.get(conn.id);
         const result = isBalanceDepleted(conn, snapshot);
         if (result.depleted) {
           const detail = result.source === "quotaCache" 
-            ? `(${result.reason || `balance: $${result.balance}`} via quotaCache)`
-            : `(balance: $${result.balance})`;
-          console.log(`[AUTO-CLEAN] Deleting ${provider} connection ${conn.name || conn.id} ${detail}`);
-          await deleteProviderConnection(conn.id);
-          cleaned.push({ provider, id: conn.id, name: conn.name, ...result });
+            ? `${result.reason || `balance: $${result.balance}`} via quotaCache`
+            : `balance: $${result.balance}`;
+          await applyCleanAction(conn.id, conn.name || conn.id, provider, action, `zero balance (${detail})`);
+          cleaned.push({ provider, id: conn.id, name: conn.name, action, ...result });
         }
       }
     } catch (err) {
@@ -139,18 +178,21 @@ export async function cleanQuotaExhaustedConnections() {
     if (!enabled) continue;
 
     try {
+      const action = await getAutoCleanAction(provider);
       const connections = await getProviderConnections({ provider });
       
       for (const conn of connections) {
+        // Skip already-disabled connections when action is "disable"
+        if (action === "disable" && !conn.isActive) continue;
+
         const snapshot = snapshotMap.get(conn.id);
         const result = isQuotaDepleted(conn, snapshot);
         if (result.depleted) {
           const detail = result.source === "quotaCache"
-            ? `(all ${result.models} models exhausted via quotaCache)`
-            : `(quotaRemaining: ${result.quotaRemaining})`;
-          console.log(`[AUTO-CLEAN] Deleting ${provider} connection ${conn.name || conn.id} ${detail}`);
-          await deleteProviderConnection(conn.id);
-          cleaned.push({ provider, id: conn.id, name: conn.name, ...result });
+            ? `all ${result.models} models exhausted via quotaCache`
+            : `quotaRemaining: ${result.quotaRemaining}`;
+          await applyCleanAction(conn.id, conn.name || conn.id, provider, action, `quota exhausted (${detail})`);
+          cleaned.push({ provider, id: conn.id, name: conn.name, action, ...result });
         }
       }
     } catch (err) {

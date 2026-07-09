@@ -263,6 +263,15 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
       const fixResult = await applyAutoFix(errorPattern, credentials, provider);
       logAutoFix(provider, credentials.connectionId, errorPattern, fixResult);
       
+      // Connection was disabled by auto-fix → skip to next connection immediately
+      if (fixResult.disabled) {
+        log.warn("AUTO-FIX", `Connection ${credentials.connectionName} disabled: ${fixResult.description}`);
+        excludeConnectionIds.add(credentials.connectionId);
+        lastError = result.error;
+        lastStatus = result.status;
+        continue;
+      }
+
       if (fixResult.shouldRetry && fixResult.waitMs > 0) {
         log.info("AUTO-FIX", `Waiting ${fixResult.waitMs}ms before retry: ${fixResult.description}`);
         await new Promise(resolve => setTimeout(resolve, fixResult.waitMs));

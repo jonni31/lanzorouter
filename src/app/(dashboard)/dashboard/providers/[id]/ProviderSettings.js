@@ -77,6 +77,7 @@ export default function ProviderSettings({ providerId }) {
   if (loading) return null;
 
   const autoCleanEnabled = settings?.providerAutoClean?.[providerId] || false;
+  const autoCleanAction = settings?.providerAutoCleanAction?.[providerId] || "delete";
   const autoFixEnabled = settings?.providerAutoFix?.[providerId] || false;
   const removeTokenLimitsEnabled = settings?.providerRemoveTokenLimits?.[providerId] || false;
   const maxAutoContinue = settings?.maxAutoContinue ?? 20;
@@ -91,7 +92,7 @@ export default function ProviderSettings({ providerId }) {
             <div>
               <div className="font-medium">Auto-clean Zero Credit</div>
               <div className="text-sm text-text-muted">
-                Automatically delete connections when balance reaches $0 or quota is exhausted
+                Automatically handle connections when balance reaches $0 or quota is exhausted
               </div>
             </div>
             <Toggle
@@ -101,11 +102,31 @@ export default function ProviderSettings({ providerId }) {
             />
           </div>
 
+          {autoCleanEnabled && (
+            <div className="flex items-center justify-between pl-4 border-l-2 border-sky-500/30">
+              <div>
+                <div className="font-medium">Clean Action</div>
+                <div className="text-sm text-text-muted">
+                  What to do with empty credit connections
+                </div>
+              </div>
+              <select
+                value={autoCleanAction}
+                onChange={(e) => updateSetting("providerAutoCleanAction", e.target.value)}
+                disabled={saving}
+                className="bg-bg-secondary border border-border rounded px-3 py-1.5 text-sm"
+              >
+                <option value="disable">Disable</option>
+                <option value="delete">Delete</option>
+              </select>
+            </div>
+          )}
+
           <div className="flex items-center justify-between">
             <div>
               <div className="font-medium">Auto-fix Errors</div>
               <div className="text-sm text-text-muted">
-                Automatically retry with fixes for known error patterns (rate limits, token refresh, etc.)
+                Immediately disable broken keys (auth/quota errors) and retry transient errors (rate limits, timeouts)
               </div>
             </div>
             <Toggle

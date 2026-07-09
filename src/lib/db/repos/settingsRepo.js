@@ -40,6 +40,7 @@ const DEFAULT_SETTINGS = {
   ponytailLevel: "full",
   contextInjectionEnabled: false,
   providerAutoClean: {},
+  providerAutoCleanAction: {},
   providerAutoFix: {},
   providerRemoveTokenLimits: {},
   maxAutoContinue: 20,
