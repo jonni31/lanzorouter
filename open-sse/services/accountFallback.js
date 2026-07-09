@@ -8,6 +8,8 @@ const NON_ACCOUNT_ERROR_TEXTS = [
   "prompt is too long",
   "request too large",
   "improperly formed request",
+  "image input",
+  "support image",
 ];
 
 /**
@@ -20,7 +22,7 @@ export function isNonAccountError(status, errorText) {
   const lowerError = errorText
     ? (typeof errorText === "string" ? errorText : JSON.stringify(errorText)).toLowerCase()
     : "";
-  return status === 400 && NON_ACCOUNT_ERROR_TEXTS.some(text => lowerError.includes(text));
+  return (status === 400 || status === 404) && NON_ACCOUNT_ERROR_TEXTS.some(text => lowerError.includes(text));
 }
 
 /**
