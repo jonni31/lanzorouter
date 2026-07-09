@@ -87,6 +87,27 @@ export function detectErrorPattern(status, error, provider) {
     };
   }
 
+  // Cloudflare-specific errors (check BEFORE generic 403/auth handling)
+  if (errorLower.includes("error code: 1015") || errorLower.includes("cf-error-1015")) {
+    return {
+      type: "rate_limit",
+      action: "wait_and_retry",
+      retryable: true,
+      waitMs: 120000, // 2 minutes — CF rate limits are aggressive
+      description: "Cloudflare rate limit (1015), waiting before retry"
+    };
+  }
+  if (errorLower.includes("error code: 1010") || errorLower.includes("error code: 1020") ||
+      errorLower.includes("cf-error-1010") || errorLower.includes("cf-error-1020")) {
+    return {
+      type: "ip_blocked",
+      action: "skip",
+      retryable: false,
+      waitMs: 0,
+      description: "Cloudflare IP block (1010/1020) — need different IP"
+    };
+  }
+
   // Auth errors (401, 403) — skip to next connection
   if (status === 401 || status === 403 || errorLower.includes("unauthorized") ||
       errorLower.includes("invalid token") || errorLower.includes("invalid api key") ||
