@@ -27,6 +27,7 @@ export default function ProfilePage() {
   const [langOpen, setLangOpen] = useState(false);
   const [shutdownOpen, setShutdownOpen] = useState(false);
   const [isShuttingDown, setIsShuttingDown] = useState(false);
+  const [isRestarting, setIsRestarting] = useState(false);
   const [settings, setSettings] = useState({ fallbackStrategy: "fill-first" });
   const [loading, setLoading] = useState(true);
   const [passwords, setPasswords] = useState({ current: "", new: "", confirm: "" });
@@ -537,6 +538,33 @@ export default function ProfilePage() {
   };
 
   const observabilityEnabled = settings.enableObservability === true;
+
+  const handleRestart = async () => {
+    setIsRestarting(true);
+    try {
+      await fetch("/api/version/restart", { method: "POST" });
+    } catch (e) {
+      // Expected — server exits before response completes
+    }
+    // Poll until server is back up
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await fetch("/api/version", { cache: "no-store" });
+        if (res.ok) {
+          clearInterval(pollInterval);
+          setIsRestarting(false);
+          window.location.reload();
+        }
+      } catch (e) {
+        // Server still restarting
+      }
+    }, 2000);
+    // Stop polling after 60s
+    setTimeout(() => {
+      clearInterval(pollInterval);
+      setIsRestarting(false);
+    }, 60000);
+  };
 
   const handleShutdown = async () => {
     setIsShuttingDown(true);
@@ -1114,6 +1142,16 @@ export default function ProfilePage() {
             className="text-red-500 border-red-200 hover:bg-red-50 hover:border-red-300"
           >
             Shutdown
+          </Button>
+          <Button
+            variant="outline"
+            fullWidth
+            icon="restart_alt"
+            onClick={handleRestart}
+            disabled={isRestarting}
+            className="text-amber-500 border-amber-200 hover:bg-amber-50 hover:border-amber-300"
+          >
+            {isRestarting ? "Restarting..." : "Restart"}
           </Button>
           <Button
             variant="outline"
