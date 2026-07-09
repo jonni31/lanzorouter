@@ -266,6 +266,24 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
       const fixResult = await applyAutoFix(errorPattern, credentials, provider);
       logAutoFix(provider, credentials.connectionId, errorPattern, fixResult);
 
+      // Handle token refresh for OAuth providers (kiro, antigravity, codebuddy, etc.)
+      if (fixResult.action === "refresh_token") {
+        log.info("AUTO-FIX", `Token refresh triggered for ${credentials.connectionName}, attempting refresh...`);
+        try {
+          const refreshed = await checkAndRefreshToken(provider, credentials);
+          if (refreshed && (refreshed.accessToken || refreshed.apiKey)) {
+            log.info("AUTO-FIX", `Token refreshed successfully for ${credentials.connectionName}, retrying`);
+            credentials = refreshed;
+            lastError = result.error;
+            lastStatus = result.status;
+            continue; // Retry with refreshed token
+          }
+        } catch (e) {
+          log.warn("AUTO-FIX", `Token refresh failed for ${credentials.connectionName}: ${e.message}`);
+        }
+        // Refresh failed — fall through to markAccountUnavailable
+      }
+
       if (fixResult.shouldRetry && fixResult.waitMs > 0) {
         log.info("AUTO-FIX", `Waiting ${fixResult.waitMs}ms before retry: ${fixResult.description}`);
         await new Promise(resolve => setTimeout(resolve, fixResult.waitMs));
