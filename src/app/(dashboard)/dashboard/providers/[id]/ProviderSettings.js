@@ -126,7 +126,7 @@ export default function ProviderSettings({ providerId }) {
             <div>
               <div className="font-medium">Auto-fix Errors</div>
               <div className="text-sm text-text-muted">
-                Immediately disable broken keys (auth/quota errors) and retry transient errors (rate limits, timeouts)
+                Automatically fix and retry transient errors (rate limits, timeouts, server errors). Does not handle exhausted credits — enable Auto-clean for that.
               </div>
             </div>
             <Toggle

@@ -1,177 +1,123 @@
 /**
  * Auto-fix known error patterns
  * When providerAutoFix is enabled:
- *  - Terminal errors (auth, quota, invalid key) → immediately disable the connection
  *  - Transient errors (rate limit, timeout, server error) → wait and retry
+ *  - Auth errors → clear error state and skip to next connection
+ *  - Credit/quota errors → NOT handled here (use Auto-clean for that)
+ *
+ * Auto-fix does NOT disable or delete connections — that's Auto-clean's job.
  */
 
 import { getSettings } from "./db/repos/settingsRepo.js";
-import { updateProviderConnection } from "./db/repos/connectionsRepo.js";
-
-/**
- * Error patterns that indicate the key/account is permanently broken
- * and should be disabled immediately (not just temporarily locked).
- */
-const TERMINAL_ERROR_MARKERS = [
-  "invalid api key", "invalid_api_key", "invalid key", "invalid token",
-  "token expired", "token invalid", "revoked", "deactivated",
-  "unauthorized", "forbidden", "banned", "suspended", "restricted",
-  "account disabled", "account deactivated",
-  "insufficient_quota", "quota exceeded", "quota exhausted", "credits exhausted",
-  "quota is not enough", "payment required", "billing",
-  "reached the limit", "limit exceeded",
-];
 
 /**
  * Detect error pattern and suggest fix
  * @param {number} status - HTTP status code
  * @param {string} error - Error message
  * @param {string} provider - Provider ID
- * @returns {object|null} - { type, action, retryable, terminal, waitMs }
+ * @returns {object|null} - { type, action, retryable, waitMs }
  */
 export function detectErrorPattern(status, error, provider) {
   const errorLower = (error || "").toLowerCase();
 
-  // Check for terminal errors first (key/account is dead)
-  const isTerminal = TERMINAL_ERROR_MARKERS.some(marker => errorLower.includes(marker));
-
-  // Payment required / quota exhausted (402)
-  if (status === 402 || (isTerminal && (errorLower.includes("quota") || errorLower.includes("credit") || errorLower.includes("limit") || errorLower.includes("payment") || errorLower.includes("billing")))) {
-    return {
-      type: "quota_exhausted",
-      action: "disable_connection",
-      retryable: false,
-      terminal: true,
-      waitMs: 0,
-      description: "Quota/credits exhausted, disable connection"
-    };
-  }
-
-  // Auth errors (401, 403) with terminal markers
-  if ((status === 401 || status === 403) && isTerminal) {
-    // For OAuth providers, token refresh might help first
-    if (provider === "xiaomi-mimo" || provider === "dashscope") {
-      return {
-        type: "auth_error",
-        action: "refresh_token",
-        retryable: true,
-        terminal: false,
-        waitMs: 0,
-        description: "Auth error, refresh token and retry"
-      };
-    }
-    return {
-      type: "auth_error",
-      action: "disable_connection",
-      retryable: false,
-      terminal: true,
-      waitMs: 0,
-      description: "Auth/key error, disable connection"
-    };
-  }
-
-  // Rate limit (429 or error message contains "rate limit") - NOT terminal
+  // Rate limit (429 or error message contains "rate limit") — fixable by waiting
   if (status === 429 || errorLower.includes("rate limit") || errorLower.includes("too many requests")) {
-    // But check if 429 actually means "credits exhausted" (e.g. CodeBuddy sends 429 for exhausted credits)
-    if (isTerminal) {
+    // Check if 429 actually means credits exhausted (not a real rate limit)
+    if (errorLower.includes("exhausted") || errorLower.includes("insufficient") || errorLower.includes("quota")) {
       return {
         type: "quota_exhausted",
-        action: "disable_connection",
+        action: "skip",
         retryable: false,
-        terminal: true,
         waitMs: 0,
-        description: "Credits exhausted (via 429), disable connection"
+        description: "Credits exhausted — use Auto-clean to handle"
       };
     }
     return {
       type: "rate_limit",
       action: "wait_and_retry",
       retryable: true,
-      terminal: false,
-      waitMs: 60000,
-      description: "Rate limit hit, wait before retry"
+      waitMs: 60000, // 1 minute default
+      description: "Rate limit hit, waiting before retry"
     };
   }
 
-  // Non-terminal auth errors (401/403 without specific terminal markers)
-  if (status === 401 || status === 403) {
-    if (provider === "xiaomi-mimo" || provider === "dashscope") {
-      return {
-        type: "auth_error",
-        action: "refresh_token",
-        retryable: true,
-        terminal: false,
-        waitMs: 0,
-        description: "Auth error, refresh token and retry"
-      };
-    }
-    return {
-      type: "auth_error",
-      action: "disable_connection",
-      retryable: false,
-      terminal: true,
-      waitMs: 0,
-      description: "Auth error, disable connection"
-    };
-  }
-
-  // Quota errors from error message (without matching status code)
-  if (errorLower.includes("quota") || errorLower.includes("exceeded") || errorLower.includes("insufficient") || errorLower.includes("exhausted")) {
-    return {
-      type: "quota_exhausted",
-      action: "disable_connection",
-      retryable: false,
-      terminal: true,
-      waitMs: 0,
-      description: "Quota exhausted, disable connection"
-    };
-  }
-
-  // Bad request (usually client error, not retryable)
-  if (status === 400 || errorLower.includes("bad request") || errorLower.includes("invalid request")) {
-    return {
-      type: "bad_request",
-      action: "fail",
-      retryable: false,
-      terminal: false,
-      waitMs: 0,
-      description: "Bad request, likely client error"
-    };
-  }
-
-  // Server errors (500+) - retry after short wait
+  // Server errors (500+) — transient, retry after short wait
   if (status >= 500) {
     return {
       type: "server_error",
       action: "wait_and_retry",
       retryable: true,
-      terminal: false,
       waitMs: 5000,
-      description: "Server error, wait and retry"
+      description: "Server error, retrying after short wait"
     };
   }
 
-  // Timeout errors
+  // Timeout errors — transient, retry immediately
   if (errorLower.includes("timeout") || errorLower.includes("timed out")) {
     return {
       type: "timeout",
       action: "retry",
       retryable: true,
-      terminal: false,
       waitMs: 0,
-      description: "Timeout, retry immediately"
+      description: "Timeout, retrying immediately"
     };
   }
 
-  // Network errors
+  // Network errors — transient, retry after short wait
   if (errorLower.includes("network") || errorLower.includes("econnrefused") || errorLower.includes("enotfound")) {
     return {
       type: "network_error",
       action: "retry",
       retryable: true,
-      terminal: false,
       waitMs: 2000,
-      description: "Network error, wait and retry"
+      description: "Network error, retrying after short wait"
+    };
+  }
+
+  // Quota/credit errors — NOT fixable, skip and let Auto-clean handle
+  if (status === 402 || errorLower.includes("quota") || errorLower.includes("exceeded") ||
+      errorLower.includes("exhausted") || errorLower.includes("insufficient") ||
+      errorLower.includes("payment required") || errorLower.includes("billing")) {
+    return {
+      type: "quota_exhausted",
+      action: "skip",
+      retryable: false,
+      waitMs: 0,
+      description: "Credits exhausted — use Auto-clean to handle"
+    };
+  }
+
+  // Auth errors (401, 403) — skip to next connection
+  if (status === 401 || status === 403 || errorLower.includes("unauthorized") ||
+      errorLower.includes("invalid token") || errorLower.includes("invalid api key") ||
+      errorLower.includes("invalid_api_key") || errorLower.includes("forbidden")) {
+    // For OAuth providers, token refresh might help
+    if (provider === "xiaomi-mimo" || provider === "dashscope") {
+      return {
+        type: "auth_error",
+        action: "refresh_token",
+        retryable: true,
+        waitMs: 0,
+        description: "Auth error, refreshing token"
+      };
+    }
+    return {
+      type: "auth_error",
+      action: "skip",
+      retryable: false,
+      waitMs: 0,
+      description: "Auth error, skipping to next connection"
+    };
+  }
+
+  // Bad request (400) — client error, not retryable
+  if (status === 400 || errorLower.includes("bad request") || errorLower.includes("invalid request")) {
+    return {
+      type: "bad_request",
+      action: "fail",
+      retryable: false,
+      waitMs: 0,
+      description: "Bad request, likely client error"
     };
   }
 
@@ -190,13 +136,12 @@ export async function isAutoFixEnabled(provider) {
 
 /**
  * Apply auto-fix for detected error pattern
- * When auto-fix is ON and error is terminal → immediately disable the connection.
- * When auto-fix is OFF → fall through to default markAccountUnavailable behavior.
+ * Only retries transient errors. Does NOT disable or delete connections.
  *
  * @param {object} errorPattern - Result from detectErrorPattern
- * @param {object} connection - Provider connection object (has connectionId, connectionName)
+ * @param {object} connection - Provider connection object
  * @param {string} provider - Provider ID
- * @returns {object} - { fixed, shouldRetry, disabled, waitMs, action }
+ * @returns {object} - { fixed, shouldRetry, waitMs, action }
  */
 export async function applyAutoFix(errorPattern, connection, provider) {
   const autoFixEnabled = await isAutoFixEnabled(provider);
@@ -204,7 +149,6 @@ export async function applyAutoFix(errorPattern, connection, provider) {
     return {
       fixed: false,
       shouldRetry: false,
-      disabled: false,
       waitMs: 0,
       action: "auto_fix_disabled"
     };
@@ -214,34 +158,8 @@ export async function applyAutoFix(errorPattern, connection, provider) {
     return {
       fixed: false,
       shouldRetry: false,
-      disabled: false,
       waitMs: 0,
       action: "no_pattern"
-    };
-  }
-
-  // Terminal errors: disable the connection immediately
-  if (errorPattern.terminal && errorPattern.action === "disable_connection") {
-    const connId = connection.connectionId || connection.id;
-    const connName = connection.connectionName || connection.name || connId?.slice(0, 8);
-    try {
-      await updateProviderConnection(connId, {
-        isActive: false,
-        testStatus: "unavailable",
-        autoDisabledAt: new Date().toISOString(),
-        autoDisabledReason: errorPattern.type,
-      });
-      console.log(`[AUTO-FIX] ⛔ Disabled ${provider} connection "${connName}" — ${errorPattern.description}`);
-    } catch (err) {
-      console.error(`[AUTO-FIX] Failed to disable ${connId}: ${err.message}`);
-    }
-    return {
-      fixed: true,
-      shouldRetry: false,
-      disabled: true,
-      waitMs: 0,
-      action: "disabled_connection",
-      description: `Disabled "${connName}" — ${errorPattern.description}`
     };
   }
 
@@ -252,7 +170,6 @@ export async function applyAutoFix(errorPattern, connection, provider) {
         return {
           fixed: true,
           shouldRetry: true,
-          disabled: false,
           waitMs: errorPattern.waitMs,
           action: "wait_and_retry",
           description: errorPattern.description
@@ -262,7 +179,6 @@ export async function applyAutoFix(errorPattern, connection, provider) {
         return {
           fixed: true,
           shouldRetry: true,
-          disabled: false,
           waitMs: errorPattern.waitMs || 0,
           action: "retry",
           description: errorPattern.description
@@ -273,7 +189,6 @@ export async function applyAutoFix(errorPattern, connection, provider) {
         return {
           fixed: true,
           shouldRetry: true,
-          disabled: false,
           waitMs: 0,
           action: "refresh_token",
           description: "Token refresh triggered"
@@ -281,11 +196,10 @@ export async function applyAutoFix(errorPattern, connection, provider) {
     }
   }
 
-  // Non-terminal, non-retryable (e.g. bad_request)
+  // Non-retryable errors (auth, quota) — just skip, don't disable
   return {
     fixed: false,
     shouldRetry: false,
-    disabled: false,
     waitMs: 0,
     action: "skip",
     description: errorPattern.description
@@ -297,11 +211,10 @@ export async function applyAutoFix(errorPattern, connection, provider) {
  */
 export function logAutoFix(provider, connectionId, errorPattern, fixResult) {
   const timestamp = new Date().toISOString();
-  const disabledTag = fixResult.disabled ? " [DISABLED]" : "";
   console.log(
     `[AUTO-FIX] ${timestamp} | ${provider} | ${connectionId?.slice(0, 8)} | ` +
     `Error: ${errorPattern?.type || "unknown"} | ` +
-    `Action: ${fixResult.action}${disabledTag} | ` +
+    `Action: ${fixResult.action} | ` +
     `Retry: ${fixResult.shouldRetry} | ` +
     `Wait: ${fixResult.waitMs}ms`
   );

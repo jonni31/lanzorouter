@@ -258,19 +258,12 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
     if (result.success) return result.response;
 
     // Auto-fix: detect error pattern and apply fix if enabled
+    // Auto-fix only retries transient errors (rate limit, timeout, server error).
+    // It does NOT disable/delete connections — that's Auto-clean's job.
     const errorPattern = detectErrorPattern(result.status, result.error, provider);
     if (errorPattern) {
       const fixResult = await applyAutoFix(errorPattern, credentials, provider);
       logAutoFix(provider, credentials.connectionId, errorPattern, fixResult);
-      
-      // Connection was disabled by auto-fix → skip to next connection immediately
-      if (fixResult.disabled) {
-        log.warn("AUTO-FIX", `Connection ${credentials.connectionName} disabled: ${fixResult.description}`);
-        excludeConnectionIds.add(credentials.connectionId);
-        lastError = result.error;
-        lastStatus = result.status;
-        continue;
-      }
 
       if (fixResult.shouldRetry && fixResult.waitMs > 0) {
         log.info("AUTO-FIX", `Waiting ${fixResult.waitMs}ms before retry: ${fixResult.description}`);
