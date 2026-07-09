@@ -19,7 +19,7 @@ export const metadata = {
   title: "LanzoRouter - Provider Automation & Quota Tracking",
   description: "LanzoRouter - provider automation, multi-account workflows, and quota tracking.",
   icons: {
-    icon: "/favicon.svg",
+    icon: "/favicon.png",
   },
 };
 

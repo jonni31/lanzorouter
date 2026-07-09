@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="public/logo.png" alt="LanzoRouter" width="120" />
+
 # LanzoRouter
 
 ### One dashboard to route, automate, and track every AI provider.
@@ -16,8 +18,6 @@ LanzoRouter is a self-hosted AI gateway that puts **15+ AI providers behind a si
 ```bash
 npx lanzorouter
 ```
-
-> **Note:** LanzoRouter is a fork of LanzoRouter with enhanced features and custom branding.
 
 </div>
 
@@ -68,7 +68,7 @@ Connect provider accounts the way a human would — by logging in. LanzoRouter d
 Group models into named **combos** that fail over automatically. If one provider is down or rate-limited, the next picks up — with optional **round-robin** load balancing so no single account gets hammered.
 
 ### 📊 Real-time quota tracking
-Every provider, every account, every token — in one place. See live usage, limits, and reset windows so you always know what's left before you hit a wall.
+Every provider, every account, every token — in one place. See live balances for providers with quota APIs (Kiro, CodeBuddy, Qoder, OpenRouter, and more), and internal usage stats (requests + tokens) for the rest. Single-account detail or bulk-provider overview at a glance.
 
 ### 🌐 Proxy pools with health checks
 Route outbound provider traffic through a pool of HTTP/SOCKS proxies, with built-in **health checking** to drop dead proxies automatically. Great for keeping multi-account setups clean and resilient.
