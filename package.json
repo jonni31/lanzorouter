@@ -39,6 +39,7 @@
     "dev:bun": "bun --bun next dev --webpack --port 1997",
     "build:bun": "bun --bun next build --webpack",
     "start:bun": "bun ./.next/standalone/server.js",
+    "provider:template": "node scripts/create-provider-template.mjs",
     "prepack": "node cli/scripts/build-cli.js",
     "postinstall": "node cli/hooks/postinstall.js || exit 0"
   },
