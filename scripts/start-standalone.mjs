@@ -35,9 +35,18 @@ for (const pkg of ["playwright", "playwright-core"]) {
 }
 
 // Bind to all network interfaces by default so the server is reachable from the
-// LAN / behind a reverse proxy or tunnel — not just localhost. Override with the
-// HOSTNAME and PORT env vars if you need to restrict it.
+// LAN / behind a reverse proxy or tunnel, not just localhost. The standalone
+// wrapper now honors `-p/--port` too, matching `next start`/PM2 usage.
+function readCliPort(argv) {
+  for (let i = 2; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if ((arg === "-p" || arg === "--port") && argv[i + 1]) return argv[i + 1];
+    if (arg.startsWith("--port=")) return arg.slice(7);
+  }
+  return null;
+}
+
 process.env.HOSTNAME = process.env.HOSTNAME || "0.0.0.0";
-process.env.PORT = process.env.PORT || "1997";
+process.env.PORT = process.env.PORT || readCliPort(process.argv) || "1997";
 
 require(path.join(standaloneRoot, "server.js"));

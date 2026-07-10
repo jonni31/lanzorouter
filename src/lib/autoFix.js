@@ -113,7 +113,11 @@ export function detectErrorPattern(status, error, provider) {
       errorLower.includes("invalid token") || errorLower.includes("invalid api key") ||
       errorLower.includes("invalid_api_key") || errorLower.includes("forbidden")) {
     // For OAuth providers, token refresh might help
-    if (["xiaomi-mimo", "dashscope", "kiro", "antigravity", "codebuddy", "qoder"].includes(provider)) {
+    if ([
+      "xiaomi-mimo", "dashscope", "kiro", "antigravity", "gemini-cli",
+      "codebuddy", "codebuddy-cn", "qoder", "codex", "claude", "xai",
+      "qwen", "iflow", "github"
+    ].includes(provider)) {
       return {
         type: "auth_error",
         action: "refresh_token",

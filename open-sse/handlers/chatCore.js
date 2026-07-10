@@ -25,6 +25,16 @@ import { compressMessages, formatRtkLog } from "../rtk/index.js";
 import { parseQuota, isQuotaExhausted } from "../utils/quotaParser.js";
 import { wrapWithAutoContinue, makeContinuationStream } from "./chatCore/autoContinue.js";
 
+function requestHasImage(value) {
+  if (!value) return false;
+  if (Array.isArray(value)) return value.some(requestHasImage);
+  if (typeof value !== "object") return false;
+  const type = value.type;
+  if (type === "image_url" || type === "image" || type === "input_image") return true;
+  if (typeof value.image_url === "string" || value.image_url?.url) return true;
+  return Object.values(value).some(requestHasImage);
+}
+
 /**
  * Core chat handler - shared between SSE and Worker
  * @param {object} options.body - Request body
@@ -47,6 +57,14 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
   const targetFormat = modelTargetFormat || getTargetFormat(provider);
   const stripList = getModelStrip(alias, model);
   const upstreamModel = getModelUpstreamId(alias, model);
+
+  if (stripList.includes("image") && requestHasImage(body)) {
+    trackPendingRequest(model, provider, connectionId, false, true);
+    return createErrorResult(
+      HTTP_STATUS.BAD_REQUEST,
+      "Model " + model + " does not support image input. Use a vision-capable model or remove image content."
+    );
+  }
 
   // Inject provider-level thinking config override (only if client hasn't set)
   // on/off → extended type (body.thinking), none/low/medium/high → effort type (body.reasoning_effort)

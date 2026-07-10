@@ -32,6 +32,15 @@ const checkOpenCodeInstalled = async () => {
   }
 };
 
+function modelSupportsImage(modelId) {
+  const id = String(modelId || "").toLowerCase();
+  return /(^|[-_])(vision|vl|multimodal)([-_]|$)/.test(id) ||
+    id.includes("gpt-4o") ||
+    id.includes("gpt-5") ||
+    id.includes("gemini") ||
+    id.includes("claude");
+}
+
 const readConfig = async () => {
   try {
     const content = await fs.readFile(getConfigPath(), "utf-8");
@@ -128,7 +137,10 @@ export async function POST(request) {
     // Add or update entries for all requested models
     for (const m of modelsArray) {
       if (!m || typeof m !== "string") continue;
-      existingProvider.models[m] = { name: m, modalities: { input: ["text", "image"], output: ["text"] } };
+      existingProvider.models[m] = {
+        name: m,
+        modalities: { input: modelSupportsImage(m) ? ["text", "image"] : ["text"], output: ["text"] },
+      };
     }
 
     // Save merged provider back

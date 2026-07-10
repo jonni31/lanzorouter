@@ -7,6 +7,15 @@ import BaseUrlSelect from "./BaseUrlSelect";
 import ApiKeySelect from "./ApiKeySelect";
 import { matchKnownEndpoint } from "./cliEndpointMatch";
 
+function modelSupportsImage(modelId) {
+  const id = String(modelId || "").toLowerCase();
+  return /(^|[-_])(vision|vl|multimodal)([-_]|$)/.test(id) ||
+    id.includes("gpt-4o") ||
+    id.includes("gpt-5") ||
+    id.includes("gemini") ||
+    id.includes("claude");
+}
+
 export default function OpenCodeToolCard({ tool, isExpanded, onToggle, baseUrl, apiKeys, activeProviders, cloudEnabled, initialStatus, tunnelEnabled, tunnelPublicUrl, tailscaleEnabled, tailscaleUrl }) {
   const [status, setStatus] = useState(initialStatus || null);
   const [checking, setChecking] = useState(false);
@@ -192,7 +201,10 @@ export default function OpenCodeToolCard({ tool, isExpanded, onToggle, baseUrl, 
 
     const modelsObj = {};
     modelsToShow.forEach(m => {
-      modelsObj[m] = { name: m, modalities: { input: ["text", "image"], output: ["text"] } };
+      modelsObj[m] = {
+        name: m,
+        modalities: { input: modelSupportsImage(m) ? ["text", "image"] : ["text"], output: ["text"] },
+      };
     });
 
     return [{

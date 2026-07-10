@@ -392,6 +392,11 @@ const PROVIDERS = {
       scope: tokens.scope,
       email: extra?.userInfo?.email,
       projectId: extra?.projectId,
+      providerSpecificData: {
+        projectId: extra?.projectId || "",
+        oauthClientId: ANTIGRAVITY_CONFIG.clientId || "",
+        oauthClientSecret: ANTIGRAVITY_CONFIG.clientSecret || "",
+      },
     }),
   },
 
@@ -511,6 +516,11 @@ const PROVIDERS = {
       scope: tokens.scope,
       email: extra?.userInfo?.email,
       projectId: extra?.projectId,
+      providerSpecificData: {
+        projectId: extra?.projectId || "",
+        oauthClientId: ANTIGRAVITY_CONFIG.clientId || "",
+        oauthClientSecret: ANTIGRAVITY_CONFIG.clientSecret || "",
+      },
     }),
   },
 

@@ -21,7 +21,8 @@ import {
   formatProviderCredentials as _formatProviderCredentials,
   getAllAccessTokens as _getAllAccessTokens,
   refreshKiroToken as _refreshKiroToken,
-  getRefreshLeadMs as _getRefreshLeadMs
+  getRefreshLeadMs as _getRefreshLeadMs,
+  isUnrecoverableRefreshError as _isUnrecoverableRefreshError
 } from "open-sse/services/tokenRefresh.js";
 import {
   refreshProviderCredentials as _refreshProviderCredentials,
@@ -72,6 +73,8 @@ export const getAllAccessTokens = (userInfo) =>
   _getAllAccessTokens(userInfo, log);
 
 export const shouldRefreshCredentials = (provider, credentials) =>
+  credentials?.isActive !== false &&
+  credentials?.refreshStatus !== "permanent_failed" &&
   _shouldRefreshCredentials(provider, credentials);
 
 // ─── Lifecycle hook ───────────────────────────────────────────────────────────
@@ -114,6 +117,56 @@ function normalizeExpiresAt(expiresAt) {
  */
 function needsProjectId(provider) {
   return provider === "antigravity" || provider === "gemini-cli";
+}
+
+const PERMANENT_REFRESH_FAILURE_DISABLE_AFTER = 3;
+
+function getPermanentFailureReason(result) {
+  return result?.code || result?.error || "unrecoverable_refresh_error";
+}
+
+async function recordPermanentRefreshFailure(provider, credentials, result) {
+  if (!credentials?.connectionId) return;
+
+  const nextCount = Number(credentials.refreshFailureCount || 0) + 1;
+  const disabled = nextCount >= PERMANENT_REFRESH_FAILURE_DISABLE_AFTER;
+  const reason = getPermanentFailureReason(result);
+  const updates = {
+    refreshFailureCount: nextCount,
+    refreshStatus: disabled ? "permanent_failed" : "permanent_failure_seen",
+    refreshFailureReason: reason,
+    lastRefreshErrorAt: new Date().toISOString(),
+    testStatus: disabled ? "inactive" : "error",
+    errorCode: reason,
+    lastError: `OAuth refresh permanently failed: ${reason}`,
+  };
+
+  if (disabled) {
+    updates.isActive = false;
+    updates.refreshDisabledAt = new Date().toISOString();
+  }
+
+  await updateProviderCredentials(credentials.connectionId, updates);
+  log.warn("TOKEN_REFRESH", disabled
+    ? "Disabled connection after permanent refresh failures"
+    : "Recorded permanent refresh failure", {
+      provider,
+      connectionId: credentials.connectionId,
+      failureCount: nextCount,
+      disableAfter: PERMANENT_REFRESH_FAILURE_DISABLE_AFTER,
+      reason,
+    });
+}
+
+async function clearRefreshFailureState(connectionId) {
+  if (!connectionId) return;
+  await updateProviderCredentials(connectionId, {
+    refreshFailureCount: 0,
+    refreshStatus: "ok",
+    refreshFailureReason: null,
+    refreshDisabledAt: null,
+    lastRefreshErrorAt: null,
+  });
 }
 
 /**
@@ -193,6 +246,22 @@ export async function updateProviderCredentials(connectionId, newCredentials) {
     }
     if (newCredentials.projectId)            updates.projectId = newCredentials.projectId;
 
+    for (const field of [
+      "isActive",
+      "refreshFailureCount",
+      "refreshStatus",
+      "refreshFailureReason",
+      "refreshDisabledAt",
+      "lastRefreshErrorAt",
+      "lastError",
+      "errorCode",
+      "testStatus",
+    ]) {
+      if (Object.prototype.hasOwnProperty.call(newCredentials, field)) {
+        updates[field] = newCredentials[field];
+      }
+    }
+
     const result = await updateProviderConnection(connectionId, updates);
     log.info("TOKEN_REFRESH", "Credentials updated in localDb", {
       connectionId,
@@ -235,6 +304,11 @@ export async function checkAndRefreshToken(provider, credentials) {
     });
 
     const newCreds = await _refreshProviderCredentials(provider, creds, log);
+    if (_isUnrecoverableRefreshError(newCreds)) {
+      await recordPermanentRefreshFailure(provider, creds, newCreds);
+      return { ...creds, refreshStatus: "permanent_failed" };
+    }
+
     if (newCreds?.accessToken || newCreds?.apiKey || newCreds?.copilotToken) {
       const mergedCreds = {
         ...newCreds,
@@ -243,6 +317,7 @@ export async function checkAndRefreshToken(provider, credentials) {
 
       // Persist to DB (non-blocking path continues below)
       await updateProviderCredentials(creds.connectionId, mergedCreds);
+      await clearRefreshFailureState(creds.connectionId);
 
       creds = {
         ...creds,

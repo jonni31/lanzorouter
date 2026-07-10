@@ -338,10 +338,14 @@ export function classifyOAuthRefreshError(errorText = "", status = 0) {
   const description = parsed?.error_description || parsed?.message || errorText || "";
   const combined = `${code} ${description}`.toLowerCase();
   const permanent = [
+    "invalid_refresh_token",
+    "invalid_grant",
+    "unauthorized_client",
     "refresh_token_expired",
     "refresh_token_reused",
     "refresh_token_invalidated",
-    "invalid_grant",
+    "refresh token expired",
+    "refresh token revoked",
   ].some((marker) => combined.includes(marker));
 
   return { status, code, description, permanent };
@@ -671,8 +675,8 @@ async function _getAccessTokenInternal(provider, credentials, log) {
     case "antigravity":
       return await refreshGoogleToken(
         credentials.refreshToken,
-        PROVIDERS[provider].clientId,
-        PROVIDERS[provider].clientSecret,
+        credentials.providerSpecificData?.oauthClientId || credentials.providerSpecificData?.clientId || PROVIDERS[provider].clientId,
+        credentials.providerSpecificData?.oauthClientSecret || credentials.providerSpecificData?.clientSecret || PROVIDERS[provider].clientSecret,
         log
       );
 
@@ -731,8 +735,8 @@ export async function refreshTokenByProvider(provider, credentials, log) {
     case "antigravity":
       return refreshGoogleToken(
         credentials.refreshToken,
-        PROVIDERS[provider].clientId,
-        PROVIDERS[provider].clientSecret,
+        credentials.providerSpecificData?.oauthClientId || credentials.providerSpecificData?.clientId || PROVIDERS[provider].clientId,
+        credentials.providerSpecificData?.oauthClientSecret || credentials.providerSpecificData?.clientSecret || PROVIDERS[provider].clientSecret,
         log
       );
     case "claude":

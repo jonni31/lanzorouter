@@ -33,6 +33,8 @@ async function defaultSaveAntigravityConnection({ tokens, email }) {
     projectId: tokens.projectId || "",
     loginEmail: email,
     automation: "gsuite-bulk",
+    oauthClientId: process.env.ANTIGRAVITY_OAUTH_CLIENT_ID || "",
+    oauthClientSecret: process.env.ANTIGRAVITY_OAUTH_CLIENT_SECRET || "",
   };
 
   const connectionData = {

@@ -116,12 +116,14 @@ async function refreshOAuthToken(connection) {
   try {
     if (provider === "gemini-cli" || provider === "antigravity") {
       const config = provider === "gemini-cli" ? GEMINI_CONFIG : ANTIGRAVITY_CONFIG;
+      const clientId = connection.providerSpecificData?.oauthClientId || connection.providerSpecificData?.clientId || config.clientId;
+      const clientSecret = connection.providerSpecificData?.oauthClientSecret || connection.providerSpecificData?.clientSecret || config.clientSecret;
       const response = await fetch("https://oauth2.googleapis.com/token", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
-          client_id: config.clientId,
-          client_secret: config.clientSecret,
+          client_id: clientId,
+          client_secret: clientSecret,
           grant_type: "refresh_token",
           refresh_token: refreshToken,
         }),

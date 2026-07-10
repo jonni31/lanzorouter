@@ -33,6 +33,15 @@ const checkDroidInstalled = async () => {
 };
 
 // Read current settings.json
+function modelSupportsImage(modelId) {
+  const id = String(modelId || "").toLowerCase();
+  return /(^|[-_])(vision|vl|multimodal)([-_]|$)/.test(id) ||
+    id.includes("gpt-4o") ||
+    id.includes("gpt-5") ||
+    id.includes("gemini") ||
+    id.includes("claude");
+}
+
 const readSettings = async () => {
   try {
     const settingsPath = getDroidSettingsPath();
@@ -141,7 +150,7 @@ export async function POST(request) {
         apiKey: keyToUse,
         displayName: m,
         maxOutputTokens: 131072,
-        noImageSupport: false,
+        noImageSupport: !modelSupportsImage(m),
         provider: "openai",
       });
     }

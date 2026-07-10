@@ -9,6 +9,15 @@ import { matchKnownEndpoint } from "./cliEndpointMatch";
 
 const CLOUD_URL = process.env.NEXT_PUBLIC_CLOUD_URL;
 
+function modelSupportsImage(modelId) {
+  const id = String(modelId || "").toLowerCase();
+  return /(^|[-_])(vision|vl|multimodal)([-_]|$)/.test(id) ||
+    id.includes("gpt-4o") ||
+    id.includes("gpt-5") ||
+    id.includes("gemini") ||
+    id.includes("claude");
+}
+
 export default function DroidToolCard({
   tool,
   isExpanded,
@@ -201,7 +210,7 @@ export default function DroidToolCard({
         apiKey: keyToUse,
         displayName: m,
         maxOutputTokens: 131072,
-        noImageSupport: false,
+        noImageSupport: !modelSupportsImage(m),
         provider: "openai",
       })),
     };
