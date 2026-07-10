@@ -2,3 +2,8 @@ node_modules/
 cli/app/.next-cli-build/
 .next/
 build/
+
+# Local runtime databases
+db/
+*.sqlite
+*.sqlite-*
