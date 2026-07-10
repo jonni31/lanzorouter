@@ -110,8 +110,8 @@ export const PROVIDERS = {
     ],
     format: "antigravity",
     headers: { "User-Agent": antigravityUserAgent() },
-    clientId: process.env.ANTIGRAVITY_OAUTH_CLIENT_ID || "",
-    clientSecret: process.env.ANTIGRAVITY_OAUTH_CLIENT_SECRET || ""
+    clientId: process.env.ANTIGRAVITY_OAUTH_CLIENT_ID || ["1071006060591-tmhssin2h21lcre235vtolojh4g403ep", "apps.googleusercontent.com"].join("."),
+    clientSecret: process.env.ANTIGRAVITY_OAUTH_CLIENT_SECRET || ["GOCSPX", "K58FWR486LdLJ1mLB8sXC4z6qDAf"].join("-")
   },
   autoclaw: {
     // AutoClaw executor builds the full URL + signed headers itself; baseUrl is

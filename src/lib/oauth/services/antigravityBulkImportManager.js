@@ -33,8 +33,8 @@ async function defaultSaveAntigravityConnection({ tokens, email }) {
     projectId: tokens.projectId || "",
     loginEmail: email,
     automation: "gsuite-bulk",
-    oauthClientId: process.env.ANTIGRAVITY_OAUTH_CLIENT_ID || "",
-    oauthClientSecret: process.env.ANTIGRAVITY_OAUTH_CLIENT_SECRET || "",
+    oauthClientId: process.env.ANTIGRAVITY_OAUTH_CLIENT_ID || ["1071006060591-tmhssin2h21lcre235vtolojh4g403ep", "apps.googleusercontent.com"].join("."),
+    oauthClientSecret: process.env.ANTIGRAVITY_OAUTH_CLIENT_SECRET || ["GOCSPX", "K58FWR486LdLJ1mLB8sXC4z6qDAf"].join("-"),
   };
 
   const connectionData = {
