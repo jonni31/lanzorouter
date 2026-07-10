@@ -292,6 +292,16 @@ export async function markAccountUnavailable(connectionId, status, errorText, pr
     newBackoffLevel = 0;
   } else {
     ({ shouldFallback, cooldownMs, newBackoffLevel } = checkFallbackError(status, errorText, backoffLevel));
+    const lowerError = typeof errorText === "string" ? errorText.toLowerCase() : "";
+    const isQuotaOrCredit = status === 402 || status === 429 || lowerError.includes("quota") || lowerError.includes("credit") || lowerError.includes("exhausted") || lowerError.includes("insufficient");
+    if (shouldFallback && provider && isQuotaOrCredit) {
+      const settings = await getSettings();
+      const minutes = Number((settings.providerHealthQuotaCooldownMinutes || {})[provider] ?? 30);
+      if (Number.isFinite(minutes) && minutes > 0) {
+        cooldownMs = Math.min(minutes * 60 * 1000, MAX_RATE_LIMIT_COOLDOWN_MS);
+        newBackoffLevel = 0;
+      }
+    }
   }
   if (!shouldFallback) return { shouldFallback: false, cooldownMs: 0 };
 

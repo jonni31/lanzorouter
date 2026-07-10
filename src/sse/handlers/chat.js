@@ -165,6 +165,9 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
   const excludeConnectionIds = new Set();
   let lastError = null;
   let lastStatus = null;
+  const initialSettings = await getSettings();
+  const maxFallbackAttempts = Number((initialSettings.providerHealthMaxFallbackAttempts || {})[provider] ?? 5);
+  let fallbackAttempts = 0;
   const credentialOptions = {};
 
   if (gateway && provider === "codex" && (gateway.mode === "original" || gateway.mode === "account")) {
@@ -298,10 +301,15 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
     const { shouldFallback } = await markAccountUnavailable(credentials.connectionId, result.status, result.error, provider, model, result.resetsAtMs);
 
     if (shouldFallback) {
-      log.warn("AUTH", `Account ${credentials.connectionName} unavailable (${result.status}), trying fallback`);
+      fallbackAttempts += 1;
       excludeConnectionIds.add(credentials.connectionId);
       lastError = result.error;
       lastStatus = result.status;
+      if (fallbackAttempts >= maxFallbackAttempts) {
+        log.warn("AUTH", `${provider} reached max fallback attempts (${maxFallbackAttempts}), returning last error`);
+        return result.response;
+      }
+      log.warn("AUTH", `Account ${credentials.connectionName} unavailable (${result.status}), trying fallback`);
       continue;
     }
 

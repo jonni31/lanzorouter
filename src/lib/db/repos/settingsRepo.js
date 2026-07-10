@@ -41,6 +41,8 @@ const DEFAULT_SETTINGS = {
   contextInjectionEnabled: false,
   providerAutoClean: {},
   providerAutoCleanAction: {},
+  providerHealthMaxFallbackAttempts: {},
+  providerHealthQuotaCooldownMinutes: {},
   providerAutoFix: {},
   providerRemoveTokenLimits: {},
   maxAutoContinue: 20,

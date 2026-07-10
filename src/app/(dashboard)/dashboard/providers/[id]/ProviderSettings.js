@@ -79,6 +79,8 @@ export default function ProviderSettings({ providerId }) {
   const autoCleanEnabled = settings?.providerAutoClean?.[providerId] || false;
   const autoCleanAction = settings?.providerAutoCleanAction?.[providerId] || "delete";
   const autoFixEnabled = settings?.providerAutoFix?.[providerId] || false;
+  const maxFallbackAttempts = settings?.providerHealthMaxFallbackAttempts?.[providerId] ?? 5;
+  const quotaCooldownMinutes = settings?.providerHealthQuotaCooldownMinutes?.[providerId] ?? 30;
   const removeTokenLimitsEnabled = settings?.providerRemoveTokenLimits?.[providerId] || false;
   const maxAutoContinue = settings?.maxAutoContinue ?? 20;
 
@@ -121,6 +123,45 @@ export default function ProviderSettings({ providerId }) {
               </select>
             </div>
           )}
+
+
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-medium">Max Fallback Attempts</div>
+              <div className="text-sm text-text-muted">
+                Maximum accounts to try per request before returning the last error
+              </div>
+            </div>
+            <select
+              value={maxFallbackAttempts}
+              onChange={(e) => updateSetting("providerHealthMaxFallbackAttempts", Number(e.target.value))}
+              disabled={saving}
+              className="bg-bg-secondary border border-border rounded px-3 py-1.5 text-sm"
+            >
+              {[3, 5, 8, 10, 15, 20].map((n) => (
+                <option key={n} value={n}>{n} accounts</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-medium">Quota Cooldown</div>
+              <div className="text-sm text-text-muted">
+                Cooldown for quota/credit exhausted errors when the provider gives no reset time
+              </div>
+            </div>
+            <select
+              value={quotaCooldownMinutes}
+              onChange={(e) => updateSetting("providerHealthQuotaCooldownMinutes", Number(e.target.value))}
+              disabled={saving}
+              className="bg-bg-secondary border border-border rounded px-3 py-1.5 text-sm"
+            >
+              {[5, 15, 30, 60, 360, 10080].map((n) => (
+                <option key={n} value={n}>{n === 10080 ? "1 week" : `${n} min`}</option>
+              ))}
+            </select>
+          </div>
 
           <div className="flex items-center justify-between">
             <div>
