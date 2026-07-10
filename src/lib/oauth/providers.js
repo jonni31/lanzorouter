@@ -8,6 +8,7 @@ import "open-sse/index.js";
 import crypto from "crypto";
 
 import { generatePKCE, generateState } from "./utils/pkce";
+import { getProviderNodeById } from "@/models";
 import {
   CLAUDE_CONFIG,
   CODEX_CONFIG,
@@ -1460,6 +1461,82 @@ export function getProvider(name) {
   return provider;
 }
 
+function buildCustomOAuthProvider(node) {
+  const config = {
+    clientId: node.clientId,
+    clientSecret: node.clientSecret || "",
+    authorizeUrl: node.authUrl || "https://accounts.google.com/o/oauth2/v2/auth",
+    tokenUrl: node.tokenUrl || "https://oauth2.googleapis.com/token",
+    userInfoUrl: node.userInfoUrl || "https://www.googleapis.com/oauth2/v1/userinfo",
+    scopes: Array.isArray(node.scopes) ? node.scopes : String(node.scopes || "openid email profile").split(/[\s,]+/).filter(Boolean),
+    apiBaseUrl: node.baseUrl,
+    node,
+  };
+
+  return {
+    config,
+    flowType: "authorization_code",
+    buildAuthUrl: (cfg, redirectUri, state) => {
+      const params = new URLSearchParams({
+        client_id: cfg.clientId,
+        response_type: "code",
+        redirect_uri: redirectUri,
+        scope: cfg.scopes.join(" "),
+        state,
+        access_type: "offline",
+        prompt: "consent",
+      });
+      return `${cfg.authorizeUrl}?${params.toString()}`;
+    },
+    exchangeToken: async (cfg, code, redirectUri) => {
+      const body = new URLSearchParams({
+        grant_type: "authorization_code",
+        client_id: cfg.clientId,
+        code,
+        redirect_uri: redirectUri,
+      });
+      if (cfg.clientSecret) body.set("client_secret", cfg.clientSecret);
+      const response = await fetch(cfg.tokenUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
+        body,
+      });
+      if (!response.ok) throw new Error(`Token exchange failed: ${await response.text()}`);
+      return response.json();
+    },
+    postExchange: async (tokens) => {
+      const userInfoRes = await fetch(`${config.userInfoUrl}?alt=json`, {
+        headers: { Authorization: `Bearer ${tokens.access_token}` },
+      });
+      const userInfo = userInfoRes.ok ? await userInfoRes.json() : {};
+      return { userInfo };
+    },
+    mapTokens: (tokens, extra) => ({
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token,
+      expiresIn: tokens.expires_in,
+      scope: tokens.scope,
+      email: extra?.userInfo?.email,
+      displayName: extra?.userInfo?.name,
+      providerSpecificData: {
+        customOAuth: true,
+        providerNodeId: node.id,
+        providerPrefix: node.prefix,
+        apiBaseUrl: node.baseUrl,
+        oauthClientId: config.clientId,
+        oauthClientSecret: config.clientSecret,
+      },
+    }),
+  };
+}
+
+async function getProviderHandler(name) {
+  if (PROVIDERS[name]) return PROVIDERS[name];
+  const node = await getProviderNodeById(name);
+  if (node?.type === "custom-oauth") return buildCustomOAuthProvider(node);
+  throw new Error(`Unknown provider: ${name}`);
+}
+
 /**
  * Get all provider names
  */
@@ -1472,7 +1549,7 @@ export function getProviderNames() {
  * @param {object} [meta] - Provider-specific metadata (e.g. gitlab clientId/baseUrl)
  */
 export async function generateAuthData(providerName, redirectUri, meta) {
-  const provider = getProvider(providerName);
+  const provider = await getProviderHandler(providerName);
   const config = provider.prepareConfig
     ? await provider.prepareConfig(provider.config, meta || {})
     : provider.config;
@@ -1505,7 +1582,7 @@ export async function generateAuthData(providerName, redirectUri, meta) {
  * @param {object} [meta] - Provider-specific metadata (e.g. gitlab clientId/baseUrl)
  */
 export async function exchangeTokens(providerName, code, redirectUri, codeVerifier, state, meta) {
-  const provider = getProvider(providerName);
+  const provider = await getProviderHandler(providerName);
   const config = provider.prepareConfig
     ? await provider.prepareConfig(provider.config, meta || {})
     : provider.config;

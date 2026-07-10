@@ -17,6 +17,13 @@ const CUSTOM_EMBEDDING_DEFAULTS = {
   baseUrl: "https://api.openai.com/v1",
 };
 
+const CUSTOM_OAUTH_DEFAULTS = {
+  authUrl: "https://accounts.google.com/o/oauth2/v2/auth",
+  tokenUrl: "https://oauth2.googleapis.com/token",
+  userInfoUrl: "https://www.googleapis.com/oauth2/v1/userinfo",
+  scopes: "openid email profile",
+};
+
 // GET /api/provider-nodes - List all provider nodes
 export async function GET() {
   try {
@@ -32,7 +39,20 @@ export async function GET() {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { name, prefix, apiType, baseUrl, type } = body;
+    const {
+      name,
+      prefix,
+      apiType,
+      baseUrl,
+      type,
+      website,
+      authUrl,
+      tokenUrl,
+      userInfoUrl,
+      scopes,
+      clientId,
+      clientSecret,
+    } = body;
 
     if (!name?.trim()) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
@@ -92,6 +112,35 @@ export async function POST(request) {
         prefix: prefix.trim(),
         baseUrl: sanitizedBaseUrl,
         name: name.trim(),
+      });
+      return NextResponse.json({ node }, { status: 201 });
+    }
+
+    if (nodeType === "custom-oauth") {
+      if (!baseUrl?.trim()) {
+        return NextResponse.json({ error: "Base URL is required" }, { status: 400 });
+      }
+      if (!clientId?.trim()) {
+        return NextResponse.json({ error: "OAuth Client ID is required" }, { status: 400 });
+      }
+
+      const normalizedScopes = Array.isArray(scopes)
+        ? scopes.map((s) => String(s).trim()).filter(Boolean)
+        : String(scopes || CUSTOM_OAUTH_DEFAULTS.scopes).split(/[\s,]+/).map((s) => s.trim()).filter(Boolean);
+
+      const node = await createProviderNode({
+        id: `custom-oauth-${generateId()}`,
+        type: "custom-oauth",
+        prefix: prefix.trim(),
+        baseUrl: baseUrl.trim().replace(/\/$/, ""),
+        name: name.trim(),
+        website: website?.trim() || "",
+        authUrl: (authUrl || CUSTOM_OAUTH_DEFAULTS.authUrl).trim(),
+        tokenUrl: (tokenUrl || CUSTOM_OAUTH_DEFAULTS.tokenUrl).trim(),
+        userInfoUrl: (userInfoUrl || CUSTOM_OAUTH_DEFAULTS.userInfoUrl).trim(),
+        scopes: normalizedScopes,
+        clientId: clientId.trim(),
+        clientSecret: clientSecret?.trim() || "",
       });
       return NextResponse.json({ node }, { status: 201 });
     }

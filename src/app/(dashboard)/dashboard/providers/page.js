@@ -129,6 +129,7 @@ export default function ProvidersPage() {
   const [showAddCompatibleModal, setShowAddCompatibleModal] = useState(false);
   const [showAddAnthropicCompatibleModal, setShowAddAnthropicCompatibleModal] =
     useState(false);
+  const [showAddCustomOAuthModal, setShowAddCustomOAuthModal] = useState(false);
   const [testingMode, setTestingMode] = useState(null);
   const [testResults, setTestResults] = useState(null);
   const notify = useNotificationStore();
@@ -314,9 +315,26 @@ export default function ProvidersPage() {
     }))
     .filter((p) => matchSearch(p.name));
 
-  const oauthEntries = Object.entries(OAUTH_PROVIDERS).filter(
-    ([, info]) => !info.hidden && matchSearch(info.name),
-  );
+  const customOAuthEntries = providerNodes
+    .filter((node) => node.type === "custom-oauth")
+    .map((node) => [
+      node.id,
+      {
+        id: node.id,
+        name: node.name || "Custom OAuth Provider",
+        color: "#2563EB",
+        textIcon: "CO",
+        website: node.website,
+      },
+    ])
+    .filter(([, info]) => matchSearch(info.name));
+
+  const oauthEntries = [
+    ...customOAuthEntries,
+    ...Object.entries(OAUTH_PROVIDERS).filter(
+      ([, info]) => !info.hidden && matchSearch(info.name),
+    ),
+  ];
   const freeEntries = Object.entries(FREE_PROVIDERS).filter(
     ([, info]) => !info.hidden && matchSearch(info.name),
   );
@@ -434,6 +452,14 @@ export default function ProvidersPage() {
           </h2>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
             <ModelAvailabilityBadge />
+            <Button
+              size="sm"
+              icon="add"
+              onClick={() => setShowAddCustomOAuthModal(true)}
+              className="w-full sm:w-auto"
+            >
+              Create OAuth Provider
+            </Button>
             <button
               onClick={() => handleBatchTest("oauth")}
               disabled={!!testingMode}
@@ -612,6 +638,14 @@ export default function ProvidersPage() {
         onCreated={(node) => {
           setProviderNodes((prev) => [...prev, node]);
           setShowAddAnthropicCompatibleModal(false);
+        }}
+      />
+      <AddCustomOAuthProviderModal
+        isOpen={showAddCustomOAuthModal}
+        onClose={() => setShowAddCustomOAuthModal(false)}
+        onCreated={(node) => {
+          setProviderNodes((prev) => [...prev, node]);
+          setShowAddCustomOAuthModal(false);
         }}
       />
 
@@ -893,6 +927,83 @@ ApiKeyProviderCard.propTypes = {
   }).isRequired,
   authType: PropTypes.string,
   onToggle: PropTypes.func,
+};
+
+
+function AddCustomOAuthProviderModal({ isOpen, onClose, onCreated }) {
+  const defaults = {
+    name: "",
+    prefix: "",
+    website: "",
+    baseUrl: "",
+    authUrl: "https://accounts.google.com/o/oauth2/v2/auth",
+    tokenUrl: "https://oauth2.googleapis.com/token",
+    userInfoUrl: "https://www.googleapis.com/oauth2/v1/userinfo",
+    scopes: "openid email profile",
+    clientId: "",
+    clientSecret: "",
+  };
+  const [formData, setFormData] = useState(defaults);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) setFormData(defaults);
+  }, [isOpen]);
+
+  const update = (key, value) => setFormData((prev) => ({ ...prev, [key]: value }));
+
+  const handleSubmit = async () => {
+    if (!formData.name.trim() || !formData.prefix.trim() || !formData.baseUrl.trim() || !formData.clientId.trim()) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/provider-nodes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...formData, type: "custom-oauth" }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        onCreated(data.node);
+        setFormData(defaults);
+      }
+    } catch (error) {
+      console.log("Error creating custom OAuth provider:", error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} title="Create OAuth Provider" onClose={onClose}>
+      <div className="flex flex-col gap-4">
+        <div className="rounded-lg border border-border bg-bg-secondary p-3 text-sm text-text-muted">
+          Use this for Google OAuth-based providers. Required data: provider name, model prefix, API base URL, OAuth client ID, auth URL, token URL, user info URL, and scopes. Client secret is optional for public/desktop clients.
+        </div>
+        <Input label="Name" value={formData.name} onChange={(e) => update("name", e.target.value)} placeholder="Example OAuth" hint="Friendly dashboard label." />
+        <Input label="Prefix" value={formData.prefix} onChange={(e) => update("prefix", e.target.value)} placeholder="exo" hint="Used as model prefix, e.g. exo/model-name." />
+        <Input label="Signup/Login Website" value={formData.website} onChange={(e) => update("website", e.target.value)} placeholder="https://example.com/login" hint="User-facing site for registration/login reference." />
+        <Input label="API Base URL" value={formData.baseUrl} onChange={(e) => update("baseUrl", e.target.value)} placeholder="https://api.example.com" hint="Provider API base URL used by adapters/translators." />
+        <Input label="OAuth Client ID" value={formData.clientId} onChange={(e) => update("clientId", e.target.value)} placeholder="client-id.apps.googleusercontent.com" />
+        <Input label="OAuth Client Secret (optional)" type="password" value={formData.clientSecret} onChange={(e) => update("clientSecret", e.target.value)} placeholder="GOCSPX-..." />
+        <Input label="Authorization URL" value={formData.authUrl} onChange={(e) => update("authUrl", e.target.value)} placeholder="https://accounts.google.com/o/oauth2/v2/auth" />
+        <Input label="Token URL" value={formData.tokenUrl} onChange={(e) => update("tokenUrl", e.target.value)} placeholder="https://oauth2.googleapis.com/token" />
+        <Input label="User Info URL" value={formData.userInfoUrl} onChange={(e) => update("userInfoUrl", e.target.value)} placeholder="https://www.googleapis.com/oauth2/v1/userinfo" />
+        <Input label="Scopes" value={formData.scopes} onChange={(e) => update("scopes", e.target.value)} placeholder="openid email profile" hint="Space or comma separated OAuth scopes." />
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button onClick={handleSubmit} fullWidth disabled={!formData.name.trim() || !formData.prefix.trim() || !formData.baseUrl.trim() || !formData.clientId.trim() || submitting}>
+            {submitting ? "Creating..." : "Create OAuth Provider"}
+          </Button>
+          <Button onClick={onClose} variant="ghost" fullWidth>Cancel</Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+AddCustomOAuthProviderModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onCreated: PropTypes.func.isRequired,
 };
 
 function AddOpenAICompatibleModal({ isOpen, onClose, onCreated }) {
