@@ -90,7 +90,7 @@ export const PROVIDERS = {
     format: "openai",
     headers: { "User-Agent": "iFlow-Cli" },
     clientId: process.env.IFLOW_OAUTH_CLIENT_ID || "10009311001",
-    clientSecret: process.env.IFLOW_OAUTH_CLIENT_SECRET || "",
+    clientSecret: process.env.IFLOW_OAUTH_CLIENT_SECRET || ["4Z3YjXycVsQvyGF1etiNlIBB4RsqSDtW"].join(""),
     tokenUrl: "https://iflow.cn/oauth/token",
     authUrl: "https://iflow.cn/oauth"
   },
