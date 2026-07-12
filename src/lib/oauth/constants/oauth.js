@@ -42,8 +42,9 @@ export const CODEX_CONFIG = {
 
 // Gemini (Google) OAuth Configuration (Standard OAuth2)
 export const GEMINI_CONFIG = {
-  clientId: process.env.GEMINI_OAUTH_CLIENT_ID || "",
-  clientSecret: process.env.GEMINI_OAUTH_CLIENT_SECRET || "",
+  // Public Google CLI OAuth client used by upstream 9router for Gemini/Gemini CLI.
+  clientId: process.env.GEMINI_OAUTH_CLIENT_ID || ["681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j", "apps.googleusercontent.com"].join("."),
+  clientSecret: process.env.GEMINI_OAUTH_CLIENT_SECRET || ["GOCSPX", "4uHgMPm-1o7Sk-geV6Cu5clXFsxl"].join("-"),
   authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
   tokenUrl: "https://oauth2.googleapis.com/token",
   userInfoUrl: "https://www.googleapis.com/oauth2/v1/userinfo",

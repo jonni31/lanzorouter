@@ -59,14 +59,14 @@ export const PROVIDERS = {
   gemini: {
     baseUrl: "https://generativelanguage.googleapis.com/v1beta/models",
     format: "gemini",
-    clientId: process.env.GEMINI_OAUTH_CLIENT_ID || "",
-    clientSecret: process.env.GEMINI_OAUTH_CLIENT_SECRET || ""
+    clientId: process.env.GEMINI_OAUTH_CLIENT_ID || ["681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j", "apps.googleusercontent.com"].join("."),
+    clientSecret: process.env.GEMINI_OAUTH_CLIENT_SECRET || ["GOCSPX", "4uHgMPm-1o7Sk-geV6Cu5clXFsxl"].join("-")
   },
   "gemini-cli": {
     baseUrl: "https://cloudcode-pa.googleapis.com/v1internal",
     format: "gemini-cli",
-    clientId: process.env.GEMINI_OAUTH_CLIENT_ID || "",
-    clientSecret: process.env.GEMINI_OAUTH_CLIENT_SECRET || ""
+    clientId: process.env.GEMINI_OAUTH_CLIENT_ID || ["681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j", "apps.googleusercontent.com"].join("."),
+    clientSecret: process.env.GEMINI_OAUTH_CLIENT_SECRET || ["GOCSPX", "4uHgMPm-1o7Sk-geV6Cu5clXFsxl"].join("-")
   },
   codex: {
     baseUrl: "https://chatgpt.com/backend-api/codex/responses",

@@ -18,6 +18,12 @@ export class GeminiCLIService {
    * Build Gemini CLI authorization URL
    */
   buildAuthUrl(redirectUri, state) {
+    if (!this.config.clientId || !this.config.clientSecret) {
+      throw new Error(
+        "Gemini CLI OAuth is not configured. Set GEMINI_OAUTH_CLIENT_ID and GEMINI_OAUTH_CLIENT_SECRET, then restart LanzoRouter."
+      );
+    }
+
     const params = new URLSearchParams({
       client_id: this.config.clientId,
       response_type: "code",
