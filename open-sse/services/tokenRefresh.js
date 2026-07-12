@@ -428,6 +428,54 @@ export async function refreshKiroToken(refreshToken, providerSpecificData, log, 
   const clientSecret = providerSpecificData?.clientSecret;
   const region = providerSpecificData?.region;
 
+  if (authMethod === "external_idp") {
+    const tokenEndpoint = providerSpecificData?.tokenEndpoint || providerSpecificData?.token_endpoint;
+    const scope = providerSpecificData?.scope || providerSpecificData?.scopes;
+    if (!clientId || !tokenEndpoint || !scope) {
+      log?.error?.("TOKEN_REFRESH", "Missing Kiro external_idp refresh metadata", {
+        hasClientId: !!clientId,
+        hasTokenEndpoint: !!tokenEndpoint,
+        hasScope: !!scope,
+      });
+      return null;
+    }
+
+    const response = await proxyAwareFetch(tokenEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/json",
+      },
+      body: new URLSearchParams({
+        grant_type: "refresh_token",
+        client_id: clientId,
+        refresh_token: refreshToken,
+        scope,
+      }),
+    }, proxyOptions);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      log?.error?.("TOKEN_REFRESH", "Failed to refresh Kiro external_idp token", {
+        status: response.status,
+        error: errorText,
+      });
+      return null;
+    }
+
+    const tokens = await response.json();
+    log?.info?.("TOKEN_REFRESH", "Successfully refreshed Kiro external_idp token", {
+      hasNewAccessToken: !!tokens.access_token,
+      expiresIn: tokens.expires_in,
+    });
+
+    return {
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token || refreshToken,
+      expiresIn: tokens.expires_in,
+    };
+  }
+
   // AWS SSO OIDC (Builder ID or IDC)
   // If clientId and clientSecret exist, assume AWS SSO OIDC (default to builder-id if authMethod not specified)
   if (clientId && clientSecret) {
