@@ -666,7 +666,11 @@ export default function AutomationPage() {
   const providerCounts = useMemo(() => {
     const counts = {};
     for (const provider of AUTOMATION_PROVIDERS) {
-      counts[provider.id] = connections.filter((connection) => connection.provider === provider.id).length;
+      // Family match: a panel id like "codebuddy"/"kiro"/"codex" counts its
+      // split variants (codebuddy-cn-free, kiro-paid, codex-free, ...) too.
+      counts[provider.id] = connections.filter(
+        (connection) => connection.provider === provider.id || connection.provider?.startsWith(provider.id + "-")
+      ).length;
     }
     return counts;
   }, [connections]);

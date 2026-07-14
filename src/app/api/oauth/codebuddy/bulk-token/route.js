@@ -3,7 +3,6 @@ import { createProviderConnection } from "@/models";
 
 export const dynamic = "force-dynamic";
 
-const CODEBUDDY_PROVIDER_ID = "codebuddy";
 const CODEBUDDY_DOMAIN = "www.codebuddy.ai";
 
 async function fetchAccountInfo(accessToken, domain) {
@@ -37,6 +36,9 @@ export async function POST(request) {
   try {
     const body = await request.json();
     const rawTokens = body?.tokens;
+    // variant selects which CodeBuddy provider the connections stamp to.
+    // "paid" -> codebuddy-cn-paid, else codebuddy-cn-free (default, back-compat).
+    const targetProvider = body?.variant === "paid" ? "codebuddy-cn-paid" : "codebuddy-cn-free";
 
     if (!rawTokens || (typeof rawTokens !== "string" && !Array.isArray(rawTokens))) {
       return NextResponse.json(
@@ -76,7 +78,7 @@ export async function POST(request) {
         if (info.enterpriseId) providerSpecificData.enterpriseId = info.enterpriseId;
 
         const connection = await createProviderConnection({
-          provider: CODEBUDDY_PROVIDER_ID,
+          provider: targetProvider,
           authType: "oauth",
           accessToken: token,
           email,

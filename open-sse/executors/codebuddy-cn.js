@@ -10,8 +10,10 @@ import { DefaultExecutor } from "./default.js";
  * SSE into a JSON response for non-streaming clients.
  */
 export class CodeBuddyExecutor extends DefaultExecutor {
-  constructor() {
-    super("codebuddy-cn");
+  // id parameterized so the same logic serves codebuddy-cn-free + -paid.
+  // DefaultExecutor resolves config from PROVIDERS[id].
+  constructor(id = "codebuddy-cn-free") {
+    super(id);
   }
 
   transformRequest(model, body, stream, credentials) {

@@ -53,7 +53,10 @@ const executors = {
   "xiaomi-tokenplan": new XiaomiTokenplanExecutor(),
   "mimo-free": new MimoFreeExecutor(),
   mmf: new MimoFreeExecutor(), // Alias for mimo-free
-  "codebuddy-cn": new CodeBuddyExecutor(),
+  "codebuddy-cn-free": new CodeBuddyExecutor("codebuddy-cn-free"),
+  "codebuddy-cn-paid": new CodeBuddyExecutor("codebuddy-cn-paid"),
+  "codebuddy-cn": new CodeBuddyExecutor("codebuddy-cn-free"), // legacy alias → free
+  codebuddy: new CodeBuddyExecutor("codebuddy-cn-free"), // legacy DB id → free (fixes orphan)
 };
 
 const defaultCache = new Map();

@@ -1,13 +1,12 @@
 export default {
-  id: "codebuddy-cn",
-  // Short model prefix (cbcn/glm-5.2). "cbcn" = CodeBuddy CN; reserve "cbai"
-  // for a future codebuddy-ai (intl) provider. The full id still resolves.
+  id: "codebuddy-cn-free",
+  // Short model prefix (cbcn/glm-5.2). "cbcn" = CodeBuddy CN Free.
   alias: "cbcn",
   uiAlias: "cbcn",
   hidden: false,
   priority: 90,
   display: {
-    name: "CodeBuddy CN",
+    name: "CodeBuddy CN Free",
     icon: "smart_toy",
     color: "#006EFF",
     website: "https://copilot.tencent.com",

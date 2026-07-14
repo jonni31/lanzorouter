@@ -17,7 +17,9 @@ import {
   isProviderPage,
 } from "./codebuddyAutomation.js";
 
-const CODEBUDDY_PROVIDER_ID = "codebuddy";
+// GSuite auto-login connections stamp to the free tier by default (also fixes
+// the legacy orphan where bare "codebuddy" no longer matched a registry id).
+const CODEBUDDY_PROVIDER_ID = "codebuddy-cn-free";
 const CODEBUDDY_LABEL = "CodeBuddy";
 const CODEBUDDY_POLL_TIMEOUT_MS = 15 * 60_000;
 const CODEBUDDY_POLL_INTERVAL_MS = 5_000;
