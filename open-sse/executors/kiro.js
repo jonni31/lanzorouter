@@ -11,8 +11,11 @@ import { getCapabilitiesForModel } from "../providers/capabilities.js";
  * Uses AWS CodeWhisperer streaming API with AWS EventStream binary format
  */
 export class KiroExecutor extends BaseExecutor {
-  constructor() {
-    super("kiro", PROVIDERS.kiro);
+  // id is parameterized so the same EventStream logic serves multiple Kiro
+  // provider variants (kiro-free, kiro-paid). They share transport/format/oauth
+  // and differ only in the exposed model list + server-side rate limits.
+  constructor(id = "kiro-free") {
+    super(id, PROVIDERS[id]);
   }
 
   buildHeaders(credentials, stream = true) {

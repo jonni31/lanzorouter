@@ -10,7 +10,10 @@ import { createProviderConnection } from "@/models";
  */
 export async function POST(request) {
   try {
-    const { refreshToken, clientId, clientSecret, region, authMethod, profileArn } = await request.json();
+    const { refreshToken, clientId, clientSecret, region, authMethod, profileArn, variant } = await request.json();
+    // variant selects which Kiro provider the connection is stamped to.
+    // "paid" -> kiro-paid, anything else -> kiro-free (default, back-compat).
+    const targetProvider = variant === "paid" ? "kiro-paid" : "kiro-free";
 
     if (!refreshToken || typeof refreshToken !== "string") {
       return NextResponse.json(
@@ -36,7 +39,7 @@ export async function POST(request) {
     const resolvedProfileArn = profileArn || tokenData.profileArn || null;
 
     const connection = await createProviderConnection({
-      provider: "kiro",
+      provider: targetProvider,
       authType: "oauth",
       accessToken: tokenData.accessToken,
       refreshToken: tokenData.refreshToken || refreshToken.trim(),

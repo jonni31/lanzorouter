@@ -29,7 +29,9 @@ const executors = {
   github: new GithubExecutor(),
   iflow: new IFlowExecutor(),
   qoder: new QoderExecutor(),
-  kiro: new KiroExecutor(),
+  "kiro-free": new KiroExecutor("kiro-free"),
+  "kiro-paid": new KiroExecutor("kiro-paid"),
+  kiro: new KiroExecutor("kiro-free"), // legacy alias → free (back-compat during migration)
   kimchi: new KimchiExecutor(),
   codex: new CodexExecutor(),
   cursor: new CursorExecutor(),

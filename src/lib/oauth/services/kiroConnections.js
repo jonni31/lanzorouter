@@ -17,12 +17,13 @@ export async function saveKiroOAuthConnection({
   profileArn,
   authMethod,
   providerLabel,
+  provider = "kiro-free", // kiro-free (default) | kiro-paid
 }) {
   const kiroService = new KiroService();
   const email = kiroService.extractEmailFromJWT(accessToken);
 
   const connection = await createProviderConnection({
-    provider: "kiro",
+    provider,
     authType: "oauth",
     accessToken,
     refreshToken,

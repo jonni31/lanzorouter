@@ -13,7 +13,7 @@ export async function POST(request) {
     const tokenData = normalizeKiroExternalIdpAuth(rawAuth);
 
     const connection = await createProviderConnection({
-      provider: "kiro",
+      provider: "kiro-free",
       authType: "oauth",
       accessToken: tokenData.accessToken,
       refreshToken: tokenData.refreshToken,

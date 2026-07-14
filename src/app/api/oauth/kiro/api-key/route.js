@@ -33,7 +33,7 @@ export async function POST(request) {
     // API keys never expire on a fixed schedule; persist a long horizon so the
     // proactive refresh path (which requires a refreshToken anyway) is skipped.
     const connection = await createProviderConnection({
-      provider: "kiro",
+      provider: "kiro-free",
       authType: "api_key",
       accessToken: credential.accessToken,
       refreshToken: null,

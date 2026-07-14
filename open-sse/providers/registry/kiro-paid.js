@@ -1,10 +1,10 @@
 export default {
-  id: "kiro",
+  id: "kiro-paid",
   priority: 10,
-  alias: "kr",
-  uiAlias: "kr",
+  alias: "krp",
+  uiAlias: "krp",
   display: {
-    name: "Kiro AI",
+    name: "Kiro Paid",
     icon: "psychology_alt",
     color: "#FF6B35",
     website: "https://kiro.dev",
