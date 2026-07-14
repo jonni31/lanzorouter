@@ -305,6 +305,10 @@ export default function ConnectionsCard({ providerId, isOAuth }) {
   const [providerStrategy, setProviderStrategy] = useState(null);
   const [providerStickyLimit, setProviderStickyLimit] = useState("1");
   const [confirmState, setConfirmState] = useState(null);
+  // Pagination: providers like mimo/CF can hold thousands of keys; render a page
+  // at a time so the DOM stays light. Default 10 per page.
+  const [pageSize, setPageSize] = useState(10);
+  const [page, setPage] = useState(1);
 
   const fetch_ = useCallback(async () => {
     try {
@@ -398,6 +402,10 @@ export default function ConnectionsCard({ providerId, isOAuth }) {
 
   if (loading) return <Card><div className="h-20 animate-pulse bg-black/5 rounded-lg" /></Card>;
 
+  // Derived pagination values (clamp page so it stays valid if the list shrinks).
+  const totalPages = Math.max(1, Math.ceil(connections.length / pageSize));
+  const pageClamped = Math.min(Math.max(1, page), totalPages);
+
   return (
     <>
       <Card>
@@ -435,7 +443,10 @@ export default function ConnectionsCard({ providerId, isOAuth }) {
         ) : (
           <>
             <div className="flex flex-col divide-y divide-black/[0.03] dark:divide-white/[0.03]">
-              {connections.map((conn, idx) => (
+              {connections.slice((pageClamped - 1) * pageSize, (pageClamped - 1) * pageSize + pageSize).map((conn, i) => {
+                // Absolute index so priority swaps stay correct across pages.
+                const idx = (pageClamped - 1) * pageSize + i;
+                return (
                 <ConnectionRow
                   key={conn.id}
                   connection={conn}
@@ -450,10 +461,37 @@ export default function ConnectionsCard({ providerId, isOAuth }) {
                   onEdit={() => { setSelectedConnection(conn); setShowEditModal(true); }}
                   onDelete={() => handleDelete(conn.id)}
                 />
-              ))}
+                );
+              })}
             </div>
-            <div className="mt-4 flex justify-stretch sm:justify-start">
-              <Button size="sm" icon="add" onClick={() => setShowAddModal(true)}>Add</Button>
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2">
+                <Button size="sm" icon="add" onClick={() => setShowAddModal(true)}>Add</Button>
+                <span className="text-xs text-text-muted">{connections.length} total</span>
+              </div>
+              {totalPages > 1 && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs text-text-muted">Per page:</span>
+                  <select
+                    value={pageSize}
+                    onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+                    className="px-2 py-1 text-xs border border-border rounded-md bg-background focus:outline-none focus:border-primary"
+                  >
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                  </select>
+                  <button type="button" disabled={pageClamped <= 1} onClick={() => setPage(1)}
+                    className="px-2 py-1 text-xs border border-border rounded-md disabled:opacity-40 hover:border-primary/40">First</button>
+                  <button type="button" disabled={pageClamped <= 1} onClick={() => setPage(pageClamped - 1)}
+                    className="px-2 py-1 text-xs border border-border rounded-md disabled:opacity-40 hover:border-primary/40">Prev</button>
+                  <span className="text-xs text-text-muted">Page {pageClamped} / {totalPages}</span>
+                  <button type="button" disabled={pageClamped >= totalPages} onClick={() => setPage(pageClamped + 1)}
+                    className="px-2 py-1 text-xs border border-border rounded-md disabled:opacity-40 hover:border-primary/40">Next</button>
+                  <button type="button" disabled={pageClamped >= totalPages} onClick={() => setPage(totalPages)}
+                    className="px-2 py-1 text-xs border border-border rounded-md disabled:opacity-40 hover:border-primary/40">Last</button>
+                </div>
+              )}
             </div>
           </>
         )}
