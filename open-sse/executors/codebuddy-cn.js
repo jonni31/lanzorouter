@@ -16,6 +16,29 @@ export class CodeBuddyExecutor extends DefaultExecutor {
     super(id);
   }
 
+  // CodeBuddy has 3 editions on different hosts sharing the same chat path
+  // (/v2/chat/completions): Global (www.codebuddy.ai), CN (www.codebuddy.cn)
+  // and the Tencent gateway (copilot.tencent.com). The registry baseUrl points
+  // at the Tencent host, but a connection may belong to the Global edition —
+  // its host is stored per-connection in providerSpecificData.domain. Swap the
+  // host onto the default URL so Global accounts route to the right gateway
+  // instead of 401'ing against Tencent.
+  buildUrl(model, stream, urlIndex = 0, credentials = null) {
+    const url = super.buildUrl(model, stream, urlIndex, credentials);
+    const domain =
+      credentials?.providerSpecificData?.domain ||
+      credentials?.providerSpecificData?.rawAuth?.domain ||
+      null;
+    if (!domain || !url) return url;
+    try {
+      const u = new URL(url);
+      u.host = domain;
+      return u.toString();
+    } catch {
+      return url;
+    }
+  }
+
   transformRequest(model, body, stream, credentials) {
     const transformed = super.transformRequest(model, body, stream, credentials);
     transformed.stream = true;
