@@ -91,6 +91,11 @@ function kiroRegion(conn) {
   return seg || "";
 }
 
+// Codex registry id was split into codex-free/-paid; match all variants.
+function isCodexProvider(provider) {
+  return provider === "codex" || provider === "codex-free" || provider === "codex-paid";
+}
+
 function getCodexResetCreditCount(quota) {
   const value = quota?.raw?.resetCredits?.availableCount;
   const count = typeof value === "number" ? value : Number(value);
@@ -299,7 +304,7 @@ export default function ProviderLimits() {
 
   const handleResetCodexLimit = useCallback(
     async (connectionId, provider) => {
-      if (provider !== "codex" || resettingLimitId) return;
+      if (!isCodexProvider(provider) || resettingLimitId) return;
 
       setResettingLimitId(connectionId);
       setErrors((prev) => ({ ...prev, [connectionId]: null }));
@@ -969,7 +974,7 @@ export default function ProviderLimits() {
 
           // Use table layout for all providers
           const isInactive = conn.isActive === false;
-          const isCodex = conn.provider === "codex";
+          const isCodex = isCodexProvider(conn.provider);
           const resetCreditCount = getCodexResetCreditCount(quota);
           const isResettingLimit = resettingLimitId === conn.id;
           const rowBusy = deletingId === conn.id || togglingId === conn.id || isResettingLimit;
@@ -1198,7 +1203,7 @@ export default function ProviderLimits() {
                     compact
                     sortMode="default"
                     showSortLabel={
-                      conn.provider === "codex" && quotaSortMode !== "default"
+                      isCodexProvider(conn.provider) && quotaSortMode !== "default"
                     }
                   />
                 )}
