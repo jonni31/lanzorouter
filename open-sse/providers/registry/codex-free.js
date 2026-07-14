@@ -1,12 +1,12 @@
 import { withCodexReviewModels } from "../models/helpers.js";
 
 export default {
-  id: "codex",
+  id: "codex-free",
   priority: 30,
   alias: "cx",
   uiAlias: "cx",
   display: {
-    name: "OpenAI Codex",
+    name: "OpenAI Codex Free",
     icon: "code",
     color: "#3B82F6",
     website: "https://chatgpt.com/codex",

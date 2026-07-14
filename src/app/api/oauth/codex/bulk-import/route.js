@@ -46,6 +46,11 @@ export async function POST(request) {
     );
   }
 
+  // variant selects which Codex provider the connections are stamped to.
+  // "paid" -> codex-paid, anything else -> codex-free (default, back-compat).
+  const variant = (body && typeof body === "object" && !Array.isArray(body)) ? body.variant : undefined;
+  const targetProvider = variant === "paid" ? "codex-paid" : "codex-free";
+
   const results = [];
   let success = 0;
   let failed = 0;
@@ -104,7 +109,7 @@ export async function POST(request) {
       if (!item.lastRefreshAt) item.lastRefreshAt = new Date().toISOString();
 
       const created = await createProviderConnection({
-        provider: "codex",
+        provider: targetProvider,
         authType: "oauth",
         ...item,
       });

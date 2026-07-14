@@ -244,7 +244,7 @@ export async function refreshCodexToken(refreshToken, log) {
           Accept: "application/json",
         },
         body: JSON.stringify({
-          client_id: PROVIDERS.codex.clientId,
+          client_id: PROVIDERS["codex-free"].clientId,
           grant_type: "refresh_token",
           refresh_token: refreshToken,
         }),

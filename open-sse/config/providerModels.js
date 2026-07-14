@@ -72,7 +72,7 @@ export function getModelUpstreamId(aliasOrId, modelId) {
   const found = findModel(models, baseId, aliasOrId);
   if (found?.upstreamModelId) return found.upstreamModelId + suffix;
   if (found?.id) return found.id + suffix;
-  if (aliasOrId === "cx" && typeof baseId === "string" && baseId.endsWith(CODEX_REVIEW_SUFFIX)) {
+  if ((aliasOrId === "cx" || aliasOrId === "cxp") && typeof baseId === "string" && baseId.endsWith(CODEX_REVIEW_SUFFIX)) {
     return baseId.slice(0, -CODEX_REVIEW_SUFFIX.length) + suffix;
   }
   return baseId + suffix;

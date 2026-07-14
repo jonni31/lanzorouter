@@ -185,8 +185,10 @@ function codexSseErrorResponse(status, message) {
  * Automatically injects default instructions if missing
  */
 export class CodexExecutor extends BaseExecutor {
-  constructor() {
-    super("codex", PROVIDERS.codex);
+  // id parameterized so the same logic serves codex-free + codex-paid.
+  // Both share transport/format/oauth; differ only in exposed models + tier.
+  constructor(id = "codex-free") {
+    super(id, PROVIDERS[id]);
     this._currentSessionId = null;
   }
 

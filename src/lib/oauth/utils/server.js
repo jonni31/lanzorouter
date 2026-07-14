@@ -222,7 +222,7 @@ export function startCodexProxy(appPort) {
             state
           );
           const connection = await createProviderConnection({
-            provider: "codex",
+            provider: "codex-free",
             authType: "oauth",
             ...tokenData,
             expiresAt: tokenData.expiresIn

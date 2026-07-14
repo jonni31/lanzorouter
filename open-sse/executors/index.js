@@ -33,7 +33,9 @@ const executors = {
   "kiro-paid": new KiroExecutor("kiro-paid"),
   kiro: new KiroExecutor("kiro-free"), // legacy alias → free (back-compat during migration)
   kimchi: new KimchiExecutor(),
-  codex: new CodexExecutor(),
+  "codex-free": new CodexExecutor("codex-free"),
+  "codex-paid": new CodexExecutor("codex-paid"),
+  codex: new CodexExecutor("codex-free"), // legacy alias → free (back-compat during migration)
   cursor: new CursorExecutor(),
   cu: new CursorExecutor(), // Alias for cursor
   vertex: new VertexExecutor("vertex"),

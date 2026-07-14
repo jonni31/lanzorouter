@@ -69,7 +69,7 @@ export async function POST(request) {
 
     // Save to database as access_token authType (no refresh token)
     const connection = await createProviderConnection({
-      provider: "codex",
+      provider: "codex-free",
       authType: "access_token",
       accessToken: token,
       name: connectionName,
