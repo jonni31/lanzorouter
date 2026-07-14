@@ -23,7 +23,9 @@ import { proxyAwareFetch } from "../../utils/proxyFetch.js";
 import { PROVIDERS } from "../../providers/index.js";
 import { U, parseResetTime } from "./shared.js";
 
-const PROVIDER_ID = "codebuddy-cn";
+// Registry id was split into codebuddy-cn-free/-paid; both share identical
+// transport/usage config, so resolve endpoint + headers from the free entry.
+const PROVIDER_ID = "codebuddy-cn-free";
 
 // Prefer the *Precise string fields (exact), fall back to the numeric ones.
 function num(precise, plain) {

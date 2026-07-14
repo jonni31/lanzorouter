@@ -6,10 +6,11 @@ import { proxyAwareFetch } from "../../utils/proxyFetch.js";
 import { U, parseResetTime, toFiniteNumber } from "./shared.js";
 
 // Codex (OpenAI) API config
+// Registry id split into codex-free/-paid; both share identical usage config.
 const CODEX_CONFIG = {
-  usageUrl: U("codex").url,
-  resetCreditsUrl: U("codex").resetCreditsUrl,
-  resetCreditsConsumeUrl: U("codex").resetCreditsConsumeUrl,
+  usageUrl: U("codex-free").url,
+  resetCreditsUrl: U("codex-free").resetCreditsUrl,
+  resetCreditsConsumeUrl: U("codex-free").resetCreditsConsumeUrl,
 };
 
 function toIsoDate(value) {

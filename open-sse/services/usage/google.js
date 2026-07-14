@@ -8,7 +8,7 @@ import { U, parseResetTime, normalizeCloudCodeProjectId, fetchWithTimeout } from
 
 // Antigravity API config (from Quotio) — urls from registry, oauth client + dynamic UA kept here
 const ANTIGRAVITY_CONFIG = {
-  ...U("antigravity"),
+  ...U("antigravity-free"),
   ...ANTIGRAVITY_OAUTH_CLIENT,
   userAgent: ANTIGRAVITY_IDE_USER_AGENT,
 };

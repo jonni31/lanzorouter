@@ -77,7 +77,7 @@ export async function getKiroUsage(accessToken, providerSpecificData, proxyOptio
     {
       name: "codewhisperer-get",
       run: async () => proxyAwareFetch(
-        `${U("kiro").cwHost}${U("kiro").limitsPath}?${getUsageParams.toString()}`,
+        `${U("kiro-free").cwHost}${U("kiro-free").limitsPath}?${getUsageParams.toString()}`,
         {
           method: "GET",
           headers: {
@@ -94,7 +94,7 @@ export async function getKiroUsage(accessToken, providerSpecificData, proxyOptio
     },
     {
       name: "codewhisperer-post",
-      run: async () => proxyAwareFetch(U("kiro").cwHost, {
+      run: async () => proxyAwareFetch(U("kiro-free").cwHost, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
@@ -119,7 +119,7 @@ export async function getKiroUsage(accessToken, providerSpecificData, proxyOptio
           ...(profileArn ? { profileArn } : {}),
           resourceType: "AGENTIC_REQUEST",
         });
-        return proxyAwareFetch(`${U("kiro").qHost}${U("kiro").limitsPath}?${params}`, {
+        return proxyAwareFetch(`${U("kiro-free").qHost}${U("kiro-free").limitsPath}?${params}`, {
           method: "GET",
           headers: {
             "Authorization": `Bearer ${accessToken}`,
