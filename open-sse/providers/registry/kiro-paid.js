@@ -14,7 +14,7 @@ export default {
     deprecated: true,
     deprecationNotice: "RISK_NOTICE",
   },
-  category: "free",
+  category: "oauth",
   transport: {
     baseUrl: "https://runtime.us-east-1.kiro.dev/generateAssistantResponse",
     baseUrls: [

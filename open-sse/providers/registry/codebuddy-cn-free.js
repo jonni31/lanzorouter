@@ -14,7 +14,7 @@ export default {
       signupUrl: "https://copilot.tencent.com",
     },
   },
-  category: "oauth",
+  category: "free",
   authModes: ["oauth", "apikey"],
   hasOAuth: true,
   transport: {

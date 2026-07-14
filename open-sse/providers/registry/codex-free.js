@@ -19,7 +19,7 @@ export default {
       image: "Requires a ChatGPT Plus (or higher) account. Free accounts are not supported for image generation.",
     },
   },
-  category: "oauth",
+  category: "free",
   thinkingConfig: {
     options: [
       "auto",
