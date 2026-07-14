@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getComboById, updateCombo, deleteCombo, getComboByName } from "@/lib/localDb";
+import { getComboById, updateCombo, deleteCombo, deleteComboByName, getComboByName } from "@/lib/localDb";
 import { resetComboRotation } from "open-sse/services/combo.js";
 
 // Validate combo name: only a-z, A-Z, 0-9, -, _
@@ -64,9 +64,18 @@ export async function PUT(request, { params }) {
 export async function DELETE(request, { params }) {
   try {
     const { id } = await params;
-    const prev = await getComboById(id);
-    const success = await deleteCombo(id);
-    
+    // Fallback name from query string — used when the row has a missing/invalid
+    // id (legacy imports left id NULL, so `id` arrives as the string "null").
+    const nameParam = new URL(request.url).searchParams.get("name");
+
+    const prev = (await getComboById(id)) || (nameParam ? await getComboByName(nameParam) : null);
+    let success = await deleteCombo(id);
+
+    // id delete missed (invalid/NULL id) → retry by unique name
+    if (!success && nameParam) {
+      success = await deleteComboByName(nameParam);
+    }
+
     if (!success) {
       return NextResponse.json({ error: "Combo not found" }, { status: 404 });
     }

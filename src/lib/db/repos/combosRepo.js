@@ -71,3 +71,13 @@ export async function deleteCombo(id) {
   const res = db.run(`DELETE FROM combos WHERE id = ?`, [id]);
   return (res?.changes ?? 0) > 0;
 }
+
+// Fallback delete by name (name is UNIQUE NOT NULL). Used when a row has a
+// missing/invalid id (e.g. legacy imports left id NULL) so the delete button
+// still works. `IS ?` matches NULL ids too when id resolves to null.
+export async function deleteComboByName(name) {
+  if (!name) return false;
+  const db = await getAdapter();
+  const res = db.run(`DELETE FROM combos WHERE name = ?`, [name]);
+  return (res?.changes ?? 0) > 0;
+}

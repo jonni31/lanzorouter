@@ -97,16 +97,19 @@ export default function CombosPage() {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id, name) => {
     setConfirmState({
       title: "Delete Combo",
       message: "Delete this combo?",
       onConfirm: async () => {
         setConfirmState(null);
         try {
-          const res = await fetch(`/api/combos/${id}`, { method: "DELETE" });
+          // Pass name too so the backend can fall back to name-based delete when
+          // a row has a missing/invalid id (legacy data with id NULL).
+          const qs = name ? `?name=${encodeURIComponent(name)}` : "";
+          const res = await fetch(`/api/combos/${id}${qs}`, { method: "DELETE" });
           if (res.ok) {
-            setCombos(combos.filter(c => c.id !== id));
+            setCombos(combos.filter(c => c.name !== name));
           }
         } catch (error) {
           console.log("Error deleting combo:", error);
@@ -194,7 +197,7 @@ export default function CombosPage() {
               copied={copied}
               onCopy={copy}
               onEdit={() => setEditingCombo(combo)}
-              onDelete={() => handleDelete(combo.id)}
+              onDelete={() => handleDelete(combo.id, combo.name)}
               strategy={comboStrategies[combo.name] || {}}
               onSetStrategy={(patch) => handleSetComboStrategy(combo.name, patch)}
             />
