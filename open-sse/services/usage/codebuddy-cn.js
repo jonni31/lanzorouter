@@ -27,6 +27,21 @@ import { U, parseResetTime } from "./shared.js";
 // transport/usage config, so resolve endpoint + headers from the free entry.
 const PROVIDER_ID = "codebuddy-cn-free";
 
+// CodeBuddy has three editions on different hosts that share an identical
+// billing path: Global (www.codebuddy.ai), CN (www.codebuddy.cn) and the
+// Tencent gateway (copilot.tencent.com). The registry default points at the
+// Tencent host, but a connection may belong to the Global edition — its host
+// is stored per-connection in providerSpecificData.domain. Honor that domain
+// so Global accounts don't get 401'd against the wrong host.
+const USAGE_PATH = "/v2/billing/meter/get-user-resource";
+function resolveUsageUrl(providerSpecificData) {
+  const domain =
+    providerSpecificData?.domain ||
+    providerSpecificData?.rawAuth?.domain ||
+    null;
+  return domain ? `https://${domain}${USAGE_PATH}` : U(PROVIDER_ID).url;
+}
+
 // Prefer the *Precise string fields (exact), fall back to the numeric ones.
 function num(precise, plain) {
   const n = Number(precise ?? plain);
@@ -52,7 +67,7 @@ export async function getCodeBuddyCnUsage(accessToken, apiKey, providerSpecificD
   }
 
   try {
-    const response = await proxyAwareFetch(U(PROVIDER_ID).url, {
+    const response = await proxyAwareFetch(resolveUsageUrl(providerSpecificData), {
       method: "POST",
       headers: {
         ...(PROVIDERS[PROVIDER_ID]?.headers || {}),
