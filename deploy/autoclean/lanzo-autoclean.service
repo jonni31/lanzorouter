@@ -1,0 +1,10 @@
+[Unit]
+Description=Lanzo Auto-Clean Zero-Credit
+After=lanzorouter.service
+
+[Service]
+Type=oneshot
+User=ubuntu
+# Override DB path here if not the default (~/.lanzo/db/data.sqlite):
+# Environment=LANZO_DB_PATH=/home/ubuntu/.lanzo/db/data.sqlite
+ExecStart=/usr/bin/python3 /opt/lanzo-autoclean/autoclean.py
