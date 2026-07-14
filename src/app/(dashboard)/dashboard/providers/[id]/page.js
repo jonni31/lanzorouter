@@ -62,6 +62,9 @@ export default function ProviderDetailPage() {
   const [showAddCustomModel, setShowAddCustomModel] = useState(false);
   const [selectedConnectionIds, setSelectedConnectionIds] = useState([]);
   const [connectionStatusFilter, setConnectionStatusFilter] = useState("all");
+  // Pagination for the key/connection list (mimo/CF can hold thousands).
+  const [connPageSize, setConnPageSize] = useState(10);
+  const [connPage, setConnPage] = useState(1);
   const [bulkProxyPoolId, setBulkProxyPoolId] = useState("__none__");
   const [bulkUpdatingProxy, setBulkUpdatingProxy] = useState(false);
   const [providerStrategy, setProviderStrategy] = useState(null);
@@ -912,11 +915,19 @@ export default function ProviderDetailPage() {
 
   const isSelected = (connectionId) => selectedConnectionIds.includes(connectionId);
 
+  // Pagination over the status-filtered list; clamp page if the list shrinks.
+  const connTotalPages = Math.max(1, Math.ceil(filteredConnections.length / connPageSize));
+  const connPageClamped = Math.min(Math.max(1, connPage), connTotalPages);
+  const connPageSlice = filteredConnections.slice(
+    (connPageClamped - 1) * connPageSize,
+    (connPageClamped - 1) * connPageSize + connPageSize
+  );
+
   const connectionsList = (
     <div className="flex min-w-0 flex-col divide-y divide-black/[0.03] dark:divide-white/[0.03]">
-      {connections
-        .map((conn, index) => {
-          if (!filterConnectionByStatus(conn, connectionStatusFilter)) return null;
+      {connPageSlice
+        .map((conn) => {
+          const index = connections.findIndex((c) => c.id === conn.id);
           return (
           <div key={conn.id} className="flex min-w-0 items-stretch">
             <div className="flex shrink-0 items-center pl-1 sm:pl-2">
@@ -1561,6 +1572,39 @@ export default function ProviderDetailPage() {
                 </div>
               )}
               {connectionsList}
+              {filteredConnections.length > 0 && (
+                <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <span className="text-xs text-text-muted">
+                    Showing {(connPageClamped - 1) * connPageSize + 1}
+                    –{Math.min(connPageClamped * connPageSize, filteredConnections.length)} of {filteredConnections.length}
+                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs text-text-muted">Per page:</span>
+                    <select
+                      value={connPageSize}
+                      onChange={(e) => { setConnPageSize(Number(e.target.value)); setConnPage(1); }}
+                      className="px-2 py-1 text-xs border border-border rounded-md bg-background focus:outline-none focus:border-primary"
+                    >
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                    </select>
+                    {connTotalPages > 1 && (
+                      <>
+                        <button type="button" disabled={connPageClamped <= 1} onClick={() => setConnPage(1)}
+                          className="px-2 py-1 text-xs border border-border rounded-md disabled:opacity-40 hover:border-primary/40">First</button>
+                        <button type="button" disabled={connPageClamped <= 1} onClick={() => setConnPage(connPageClamped - 1)}
+                          className="px-2 py-1 text-xs border border-border rounded-md disabled:opacity-40 hover:border-primary/40">Prev</button>
+                        <span className="text-xs text-text-muted">Page {connPageClamped} / {connTotalPages}</span>
+                        <button type="button" disabled={connPageClamped >= connTotalPages} onClick={() => setConnPage(connPageClamped + 1)}
+                          className="px-2 py-1 text-xs border border-border rounded-md disabled:opacity-40 hover:border-primary/40">Next</button>
+                        <button type="button" disabled={connPageClamped >= connTotalPages} onClick={() => setConnPage(connTotalPages)}
+                          className="px-2 py-1 text-xs border border-border rounded-md disabled:opacity-40 hover:border-primary/40">Last</button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
               {!isCompatible && (
                 <div className="mt-4 grid grid-cols-1 gap-2 sm:flex">
                   {providerId === "iflow" && (

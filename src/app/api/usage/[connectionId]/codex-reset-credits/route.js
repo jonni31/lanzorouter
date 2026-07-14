@@ -53,7 +53,7 @@ async function getCodexConnection(connectionId) {
     return { response: Response.json({ error: "Connection not found" }, { status: 404 }) };
   }
 
-  if (connection.provider !== "codex") {
+  if (connection.provider !== "codex" && connection.provider !== "codex-free" && connection.provider !== "codex-paid") {
     return { response: Response.json({ error: "Codex reset credits are only available for Codex connections." }, { status: 400 }) };
   }
 
