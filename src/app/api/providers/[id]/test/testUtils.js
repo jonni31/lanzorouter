@@ -191,8 +191,15 @@ function parseProviderErrorMessage(bodyText, fallback) {
   return bodyText.trim() || fallback;
 }
 
+// Split providers (kiro-free/kiro-paid, codex-free/codex-paid, antigravity-free/...)
+// share the same OAuth test/refresh logic as their base provider. Strip the
+// -free/-paid tier suffix so config lookup and provider branches still match.
+function baseProvider(provider) {
+  return (provider || "").replace(/-(free|paid)$/, "");
+}
+
 async function probeCloudCodeAssistAccess(connection, accessToken, effectiveProxy = null) {
-  const userAgent = connection.provider === "antigravity"
+  const userAgent = baseProvider(connection.provider) === "antigravity"
     ? "google-api-nodejs-client/9.15.1 vscode-antigravity/1.107.0"
     : "google-api-nodejs-client/9.15.1 gemini-cli/0.34.0";
 
@@ -217,7 +224,7 @@ async function probeCloudCodeAssistAccess(connection, accessToken, effectiveProx
 }
 
 async function refreshOAuthToken(connection) {
-  const provider = connection.provider;
+  const provider = baseProvider(connection.provider);
   const refreshToken = connection.refreshToken;
   if (!refreshToken) return null;
 
@@ -334,7 +341,7 @@ function isTokenExpired(connection) {
 }
 
 async function testOAuthConnection(connection, effectiveProxy = null) {
-  const config = OAUTH_TEST_CONFIG[connection.provider];
+  const config = OAUTH_TEST_CONFIG[baseProvider(connection.provider)];
   if (!config) return { valid: false, error: "Provider test not supported", refreshed: false };
   if (!connection.accessToken) return { valid: false, error: "No access token", refreshed: false };
 
@@ -365,7 +372,7 @@ async function testOAuthConnection(connection, effectiveProxy = null) {
     return { valid: true, error: null, refreshed: false, newTokens: null };
   }
 
-  if (connection.provider === "gemini-cli" || connection.provider === "antigravity") {
+  if (baseProvider(connection.provider) === "gemini-cli" || baseProvider(connection.provider) === "antigravity") {
     const initial = await probeCloudCodeAssistAccess(connection, accessToken, effectiveProxy);
     if (initial.valid) return { valid: true, error: null, refreshed, newTokens };
 
