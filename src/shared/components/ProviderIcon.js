@@ -5,6 +5,7 @@ import PropTypes from "prop-types";
 
 export default function ProviderIcon({
   src,
+  fallbackSrc,
   alt,
   size = 32,
   className = "",
@@ -12,8 +13,19 @@ export default function ProviderIcon({
   fallbackColor,
 }) {
   const [errored, setErrored] = useState(false);
+  const [triedFallback, setTriedFallback] = useState(false);
 
-  if (!src || errored) {
+  const currentSrc = triedFallback ? fallbackSrc : src;
+
+  const handleError = () => {
+    if (fallbackSrc && !triedFallback && fallbackSrc !== src) {
+      setTriedFallback(true);
+    } else {
+      setErrored(true);
+    }
+  };
+
+  if (!currentSrc || errored) {
     return (
       <span
         className={`inline-flex items-center justify-center font-bold rounded-lg ${className}`.trim()}

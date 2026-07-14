@@ -651,7 +651,8 @@ function ProviderCard({ providerId, provider, stats, authType, onToggle }) {
               }}
             >
               <ProviderIcon
-                src={`/providers/${provider.id.replace(/-(free|paid)$/, "")}.png`}
+                src={`/providers/${provider.id}.png`}
+                fallbackSrc={`/providers/${provider.id.replace(/-(free|paid)$/, "")}.png`}
                 alt={provider.name}
                 size={30}
                 className="object-contain rounded-lg max-w-[32px] max-h-[32px]"
@@ -761,8 +762,10 @@ function ApiKeyProviderCard({
         ? "/providers/oai-r.png"
         : "/providers/oai-cc.png";
     if (isAnthropicCompatible) return "/providers/anthropic-m.png";
-    return `/providers/${provider.id.replace(/-(free|paid)$/, "")}.png`;
+    return `/providers/${provider.id}.png`;
   };
+  const getIconFallback = () =>
+    `/providers/${provider.id.replace(/-(free|paid)$/, "")}.png`;
 
   return (
     <Link href={`/dashboard/providers/${providerId}`} className="group min-w-0">
@@ -780,6 +783,7 @@ function ApiKeyProviderCard({
             >
               <ProviderIcon
                 src={getIconPath()}
+                fallbackSrc={getIconFallback()}
                 alt={provider.name}
                 size={30}
                 className="object-contain rounded-lg max-w-[30px] max-h-[30px]"
