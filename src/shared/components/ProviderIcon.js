@@ -43,12 +43,12 @@ export default function ProviderIcon({
 
   return (
     <img
-      src={src}
+      src={currentSrc}
       alt={alt}
       width={size}
       height={size}
       className={className}
-      onError={() => setErrored(true)}
+      onError={handleError}
     />
   );
 }
