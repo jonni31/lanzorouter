@@ -38,7 +38,11 @@ async function defaultSaveAntigravityConnection({ tokens, email }) {
   };
 
   const connectionData = {
-    provider: ANTIGRAVITY_PROVIDER_ID,
+    // Stamp to the free tier (default). NOTE: ANTIGRAVITY_PROVIDER_ID stays
+    // "antigravity" for the OAuth-flow calls below (generateAuthData/exchange
+    // look up the OAuth flow map, which is keyed "antigravity", not the split
+    // engine ids). Only the DB stamp uses the split id.
+    provider: "antigravity-free",
     authType: "oauth",
     accessToken: tokens.accessToken,
     refreshToken: tokens.refreshToken || "",

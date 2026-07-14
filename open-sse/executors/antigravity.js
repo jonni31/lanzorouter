@@ -113,8 +113,10 @@ function buildIdeRequestId({ body, request, credentials, model, requestType }) {
 }
 
 export class AntigravityExecutor extends BaseExecutor {
-  constructor() {
-    super("antigravity", PROVIDERS.antigravity);
+  // id parameterized so the same logic serves antigravity-free + -paid.
+  // Both share transport/format/oauth; differ only in exposed models + tier.
+  constructor(id = "antigravity-free") {
+    super(id, PROVIDERS[id]);
   }
 
   buildUrl(model, stream, urlIndex = 0) {

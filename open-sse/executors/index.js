@@ -23,7 +23,9 @@ import { CodeBuddyExecutor } from "./codebuddy-cn.js";
 import { DefaultExecutor } from "./default.js";
 
 const executors = {
-  antigravity: new AntigravityExecutor(),
+  "antigravity-free": new AntigravityExecutor("antigravity-free"),
+  "antigravity-paid": new AntigravityExecutor("antigravity-paid"),
+  antigravity: new AntigravityExecutor("antigravity-free"), // legacy alias → free
   azure: new AzureExecutor(),
   "gemini-cli": new GeminiCLIExecutor(),
   github: new GithubExecutor(),

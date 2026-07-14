@@ -1,12 +1,12 @@
 import { ANTIGRAVITY_IDE_BASE_URL, ANTIGRAVITY_IDE_USER_AGENT, ANTIGRAVITY_OAUTH_CLIENT } from "../shared.js";
 
 export default {
-  id: "antigravity",
+  id: "antigravity-paid",
   priority: 20,
-  alias: "ag",
-  uiAlias: "ag",
+  alias: "agp",
+  uiAlias: "agp",
   display: {
-    name: "Antigravity",
+    name: "Antigravity Paid",
     icon: "rocket_launch",
     color: "#F59E0B",
     website: "https://antigravity.google",
