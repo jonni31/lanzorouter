@@ -129,12 +129,12 @@ export function parseGrokCliBilling(billing, user = null) {
     //       no per-window subscription quota (rate-limits/usage endpoints 404),
     //       so show an "active" unlimited row instead of a false 0% depleted bar.
     //   (b) Exhausted free/promo accounts — chat 402s with spending-limit.
-    const isSubscriber =
-      user?.hasGrokCodeAccess === true ||
-      (typeof user?.subscriptionTier === "string" && user.subscriptionTier.trim() !== "");
-
-    // Always surface the on-demand window first (top row). cap 0 = no on-demand
-    // credit; render a synthetic 1/1 depleted bar so the real 0% shows honestly.
+    // onDemandCap 0 = no on-demand credit. Render a synthetic 1/1 depleted row
+    // so the real 0% shows honestly. We do NOT fake a "Subscription" quota row:
+    // subscription accounts (XPremiumPlus, hasGrokCodeAccess=true) are covered by
+    // the plan, but xAI exposes no per-window subscription usage/reset anywhere
+    // (billing is empty, chat headers advertise only a STATIC limit that never
+    // decrements). The tier is surfaced as a header badge in the UI instead.
     quotas["On-demand"] = {
       used: 1,
       total: 1,
@@ -142,20 +142,6 @@ export function parseGrokCliBilling(billing, user = null) {
       resetAt: periodEnd,
       unlimited: false,
     };
-
-    // Subscription accounts (XPremiumPlus etc, hasGrokCodeAccess=true) have chat
-    // covered by the plan on top of on-demand. xAI exposes no per-window
-    // subscription quota (rate-limits/usage endpoints 404), so add a second row
-    // (bottom) marked active/unlimited to show the plan is live.
-    if (isSubscriber) {
-      quotas["Subscription"] = {
-        used: 0,
-        total: 0,
-        remainingPercentage: 100,
-        resetAt: periodEnd,
-        unlimited: true,
-      };
-    }
   }
 
   // Prepaid top-up balance (remaining credits; no fixed allotment known)
