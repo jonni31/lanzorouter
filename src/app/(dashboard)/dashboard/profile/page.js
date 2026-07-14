@@ -572,8 +572,29 @@ export default function ProfilePage() {
     } catch (e) {
       // Expected to fail as server restarts; ignore error
     }
-    // Server exits then the process manager respawns it; reload shortly after.
-    setTimeout(() => window.location.reload(), 3000);
+    // Server exits then the process manager respawns it. Poll the health
+    // endpoint until it comes back up, then reload — so the user never sees a
+    // 502 from hitting the origin mid-restart.
+    const deadline = Date.now() + 60000;
+    const poll = async () => {
+      try {
+        const res = await fetch("/api/health", { cache: "no-store" });
+        if (res.ok) {
+          window.location.reload();
+          return;
+        }
+      } catch (e) {
+        // server still down; keep polling
+      }
+      if (Date.now() < deadline) {
+        setTimeout(poll, 1000);
+      } else {
+        // Give up waiting and reload anyway.
+        window.location.reload();
+      }
+    };
+    // Wait a moment for the process to actually exit before polling.
+    setTimeout(poll, 2000);
   };
 
   const handleLogout = async () => {
