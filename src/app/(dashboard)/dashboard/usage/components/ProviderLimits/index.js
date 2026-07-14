@@ -126,6 +126,87 @@ function formatTimeRemaining(value) {
   return days > 0 ? `${days}d ${hours}h` : `${hours}h`;
 }
 
+// Quota display mode: "single" = one card per key, "bulk" = one aggregate card
+// per provider (sums every key's usage, server-side via /api/usage/aggregate).
+const QUOTA_DISPLAY_MODE_OPTIONS = [
+  { value: "single", label: "Satuan", icon: "account_circle" },
+  { value: "bulk", label: "Bulk", icon: "stacks" },
+];
+
+function providerDisplayName(provider) {
+  if (!provider) return "Provider";
+  return provider
+    .replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+// Merge already-normalized quota rows (from parseQuotaData) by name, summing
+// used/total and keeping the earliest resetAt. Used for the client-side bulk
+// fallback when the server aggregate hasn't loaded yet.
+function mergeQuotaRows(rows = []) {
+  const merged = new Map();
+  rows.forEach((q) => {
+    if (!q?.name) return;
+    const cur = merged.get(q.name) || {
+      name: q.name,
+      used: 0,
+      total: 0,
+      resetAt: q.resetAt || null,
+      recurring: q.recurring,
+    };
+    cur.used += Number(q.used) || 0;
+    cur.total += Number(q.total) || 0;
+    if (q.resetAt) {
+      if (!cur.resetAt || new Date(q.resetAt).getTime() < new Date(cur.resetAt).getTime()) {
+        cur.resetAt = q.resetAt;
+      }
+    }
+    merged.set(q.name, cur);
+  });
+  return [...merged.values()];
+}
+
+// Group current-page connections by provider into aggregate "cards". This is the
+// client-side fallback (current page only); the server aggregate covers ALL
+// accounts and is preferred when available.
+function buildProviderAggregateCards(connections, quotaData, loading, errors) {
+  const groups = new Map();
+  connections.forEach((conn) => {
+    if (!conn.provider) return;
+    if (!groups.has(conn.provider)) groups.set(conn.provider, []);
+    groups.get(conn.provider).push(conn);
+  });
+
+  return [...groups.entries()].map(([provider, conns]) => {
+    const allQuotas = [];
+    let message = null;
+    let isLoading = false;
+    let firstError = null;
+    conns.forEach((conn) => {
+      const entry = quotaData[conn.id];
+      if (Array.isArray(entry?.quotas)) allQuotas.push(...entry.quotas);
+      if (entry?.message && !message) message = entry.message;
+      if (loading[conn.id]) isLoading = true;
+      if (errors[conn.id] && !firstError) firstError = errors[conn.id];
+    });
+    return {
+      id: `${provider}-aggregate`,
+      provider,
+      name: providerDisplayName(provider),
+      accountCount: conns.length,
+      isActive: conns.some((c) => c.isActive ?? true),
+      isAggregate: true,
+      quota: {
+        quotas: mergeQuotaRows(allQuotas),
+        message: allQuotas.length === 0 ? message : null,
+      },
+      isLoading,
+      error: !allQuotas.length ? firstError : null,
+      connectionIds: conns.map((c) => c.id),
+    };
+  });
+}
+
 export default function ProviderLimits() {
   const { copied, copy } = useCopyToClipboard();
   const [connections, setConnections] = useState([]);
@@ -154,6 +235,9 @@ export default function ProviderLimits() {
   const [expiringFirst, setExpiringFirst] = useState(false);
   const [providerMenuOpen, setProviderMenuOpen] = useState(false);
   const [bulkToggling, setBulkToggling] = useState(false);
+  const [displayMode, setDisplayMode] = useState("single");
+  const [serverAggregateData, setServerAggregateData] = useState({});
+  const [serverAggregateLoading, setServerAggregateLoading] = useState({});
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(CONNECTIONS_PAGE_SIZE);
   const [customPageSizeInput, setCustomPageSizeInput] = useState(
@@ -500,6 +584,35 @@ export default function ProviderLimits() {
     }
   }, [refreshingAll, fetchConnections, fetchQuota, page]);
 
+  // Fetch server-side aggregate quota for bulk display mode. Covers ALL accounts
+  // of the provider (not just the current page). force=true triggers a live
+  // refetch upstream; otherwise the server returns cached snapshots.
+  const fetchServerAggregate = useCallback(async (provider, force = false) => {
+    if (!provider || provider === "all") return;
+    setServerAggregateLoading((prev) => ({ ...prev, [provider]: true }));
+    try {
+      const url = `/api/usage/aggregate?provider=${encodeURIComponent(provider)}${force ? "&refresh=1" : ""}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Failed to fetch aggregate");
+      const data = await response.json();
+      const parsedQuotas = parseQuotaData(provider, data);
+      setServerAggregateData((prev) => ({
+        ...prev,
+        [provider]: {
+          quotas: parsedQuotas,
+          plan: data.plan || null,
+          accountCount: data.accountCount || 0,
+          accountsWithQuota: data.accountsWithQuota || 0,
+          deadCount: data.deadCount || 0,
+        },
+      }));
+    } catch (error) {
+      console.error(`[ProviderLimits] Aggregate fetch error for ${provider}:`, error);
+    } finally {
+      setServerAggregateLoading((prev) => ({ ...prev, [provider]: false }));
+    }
+  }, []);
+
   useEffect(() => {
     const initializeData = async () => {
       setConnectionsLoading(true);
@@ -630,6 +743,15 @@ export default function ProviderLimits() {
     };
   }, [autoRefresh, refreshAll, hasHydratedAutoRefresh]);
 
+  // In bulk mode, fetch the server-side aggregate (covers ALL accounts) for the
+  // providers currently visible. Uses cached snapshots (no force) so it's cheap.
+  useEffect(() => {
+    if (displayMode !== "bulk") return;
+    const providers =
+      providerFilter !== "all" ? [providerFilter] : providerOptions;
+    providers.forEach((p) => fetchServerAggregate(p, false));
+  }, [displayMode, providerFilter, providerOptions, fetchServerAggregate]);
+
   const sortedConnections = useMemo(
     () =>
       sortVisibleConnections(
@@ -640,6 +762,36 @@ export default function ProviderLimits() {
         quotaSortMode,
       ),
     [connections, quotaData, expiringFirst, providerFilter, quotaSortMode],
+  );
+
+  // Bulk mode: one aggregate card per provider. Client-side grouping covers the
+  // current page; when the server aggregate (ALL accounts) has loaded for a
+  // provider, prefer its totals + real account count.
+  const clientAggregateCards = useMemo(
+    () => buildProviderAggregateCards(sortedConnections, quotaData, loading, errors),
+    [sortedConnections, quotaData, loading, errors],
+  );
+
+  const providerAggregateCards = useMemo(() => {
+    if (!Object.keys(serverAggregateData).length) return clientAggregateCards;
+    return clientAggregateCards.map((card) => {
+      const serverData = serverAggregateData[card.provider];
+      if (!serverData) return card;
+      return {
+        ...card,
+        accountCount: serverData.accountCount || card.accountCount,
+        quota: {
+          quotas: serverData.quotas,
+          message: serverData.quotas?.length === 0 ? card.quota.message : null,
+        },
+        isLoading: serverAggregateLoading[card.provider] || false,
+      };
+    });
+  }, [clientAggregateCards, serverAggregateData, serverAggregateLoading]);
+
+  const renderedConnections = useMemo(
+    () => (displayMode === "bulk" ? providerAggregateCards : sortedConnections),
+    [displayMode, providerAggregateCards, sortedConnections],
   );
 
   // Connection is depleted when any quota entry hit the threshold
@@ -863,6 +1015,24 @@ export default function ProviderLimits() {
             ))}
           </select>
 
+          <div className="inline-flex h-8 overflow-hidden rounded-lg border border-black/10 bg-black/[0.02] dark:border-white/10 dark:bg-white/[0.03]">
+            {QUOTA_DISPLAY_MODE_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setDisplayMode(option.value)}
+                aria-pressed={displayMode === option.value}
+                className={`flex h-full items-center gap-1.5 px-2 text-xs transition-colors ${displayMode === option.value ? "bg-primary text-white" : "text-text-primary hover:bg-black/5 dark:hover:bg-white/10"}`}
+                title={`Show quota in ${option.label} mode`}
+              >
+                <span className="material-symbols-outlined text-[14px]">
+                  {option.icon}
+                </span>
+                <span className="hidden sm:inline">{option.label}</span>
+              </button>
+            ))}
+          </div>
+
           {providerFilter === "codex" && (
             <select
               value={quotaSortMode}
@@ -966,6 +1136,77 @@ export default function ProviderLimits() {
         </div>
       )}
 
+      {displayMode === "bulk" && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {renderedConnections.map((card) => {
+            const quota = card.quota;
+            const isLoading = card.isLoading;
+            const error = card.error;
+            return (
+              <Card key={card.id} padding="none" className="min-w-0">
+                <div className="px-3 py-2 border-b border-black/10 dark:border-white/10">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-8 h-8 shrink-0 rounded-md flex items-center justify-center overflow-hidden">
+                        <ProviderIcon
+                          src={`/providers/${card.provider}.png`}
+                          alt={card.provider}
+                          size={32}
+                          className="object-contain"
+                          fallbackText={card.provider?.slice(0, 2).toUpperCase() || "PR"}
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-semibold text-text-primary truncate">
+                          {card.name}
+                        </h3>
+                        <p className="text-xs text-text-muted truncate">
+                          {card.accountCount} account{card.accountCount === 1 ? "" : "s"}
+                        </p>
+                      </div>
+                    </div>
+                    <Tooltip text="Refresh all accounts (live)">
+                      <button
+                        type="button"
+                        onClick={() => fetchServerAggregate(card.provider, true)}
+                        disabled={isLoading}
+                        aria-label="Refresh aggregate quota"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors disabled:opacity-50"
+                      >
+                        <span className={`material-symbols-outlined text-[18px] text-text-muted ${isLoading ? "animate-spin" : ""}`}>
+                          refresh
+                        </span>
+                      </button>
+                    </Tooltip>
+                  </div>
+                </div>
+                <div className="px-2 py-1.5">
+                  {isLoading ? (
+                    <div className="text-center py-5 text-text-muted">
+                      <span className="material-symbols-outlined text-[28px] animate-spin">
+                        progress_activity
+                      </span>
+                    </div>
+                  ) : error ? (
+                    <div className="text-center py-5">
+                      <span className="material-symbols-outlined text-[28px] text-red-500">error</span>
+                      <p className="mt-1.5 text-xs text-text-muted">{error}</p>
+                    </div>
+                  ) : quota?.message ? (
+                    <div className="text-center py-5">
+                      <p className="text-xs text-text-muted">{quota.message}</p>
+                    </div>
+                  ) : (
+                    <QuotaTable quotas={quota?.quotas} compact sortMode="default" />
+                  )}
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {displayMode === "single" && (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {sortedConnections.map((conn) => {
           const quota = quotaData[conn.id];
@@ -1212,7 +1453,9 @@ export default function ProviderLimits() {
           );
         })}
       </div>
+      )}
 
+      {displayMode === "single" && (
       <div className="rounded-xl border border-black/10 bg-black/[0.02] px-3 py-2 dark:border-white/10 dark:bg-white/[0.03]">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="text-xs text-text-muted">{connectionsPageSummary}</span>
@@ -1335,6 +1578,7 @@ export default function ProviderLimits() {
             </div>
           </div>
         </div>
+      )}
 
       <ConfirmModal
         isOpen={Boolean(resetConfirmState)}
