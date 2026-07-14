@@ -25,6 +25,8 @@ export default function ProfilePage() {
   const [langOpen, setLangOpen] = useState(false);
   const [shutdownOpen, setShutdownOpen] = useState(false);
   const [isShuttingDown, setIsShuttingDown] = useState(false);
+  const [restartOpen, setRestartOpen] = useState(false);
+  const [isRestarting, setIsRestarting] = useState(false);
   const [settings, setSettings] = useState({ fallbackStrategy: "fill-first" });
   const [loading, setLoading] = useState(true);
   const [passwords, setPasswords] = useState({ current: "", new: "", confirm: "" });
@@ -561,6 +563,17 @@ export default function ProfilePage() {
     }
     setIsShuttingDown(false);
     setShutdownOpen(false);
+  };
+
+  const handleRestart = async () => {
+    setIsRestarting(true);
+    try {
+      await fetch("/api/version/restart", { method: "POST" });
+    } catch (e) {
+      // Expected to fail as server restarts; ignore error
+    }
+    // Server exits then the process manager respawns it; reload shortly after.
+    setTimeout(() => window.location.reload(), 3000);
   };
 
   const handleLogout = async () => {
@@ -1115,6 +1128,14 @@ export default function ProfilePage() {
           <Button
             variant="outline"
             fullWidth
+            icon="restart_alt"
+            onClick={() => setRestartOpen(true)}
+          >
+            Restart
+          </Button>
+          <Button
+            variant="outline"
+            fullWidth
             icon="logout"
             onClick={handleLogout}
           >
@@ -1147,6 +1168,18 @@ export default function ProfilePage() {
         cancelText="Cancel"
         variant="danger"
         loading={isShuttingDown}
+      />
+
+      <ConfirmModal
+        isOpen={restartOpen}
+        onClose={() => setRestartOpen(false)}
+        onConfirm={handleRestart}
+        title="Restart Proxy"
+        message="Restart the proxy server? Active requests may be interrupted briefly."
+        confirmText="Restart"
+        cancelText="Cancel"
+        variant="primary"
+        loading={isRestarting}
       />
 
       <Modal
