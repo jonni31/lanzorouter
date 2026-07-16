@@ -51,11 +51,49 @@ const ACTIVE_BILLING = {
   },
 };
 
+/** Live shape from XPremiumPlus subscription (lanzologan 2026-07-16) */
+const SUBSCRIPTION_CREDITS = {
+  config: {
+    currentPeriod: {
+      type: "USAGE_PERIOD_TYPE_WEEKLY",
+      start: "2026-07-14T04:00:11.065100+00:00",
+      end: "2026-07-21T04:00:11.065100+00:00",
+    },
+    creditUsagePercent: 3.0,
+    onDemandCap: { val: 0 },
+    onDemandUsed: { val: 0 },
+    productUsage: [{ product: "GrokBuild", usagePercent: 3.0 }],
+    isUnifiedBillingUser: true,
+    prepaidBalance: { val: 0 },
+    topUpMethod: "TOP_UP_METHOD_SAVED_PAYMENT_METHOD",
+    billingPeriodStart: "2026-07-14T04:00:11.065100+00:00",
+    billingPeriodEnd: "2026-07-21T04:00:11.065100+00:00",
+  },
+};
+
+const SUBSCRIPTION_MONTHLY = {
+  config: {
+    monthlyLimit: { val: 20000 },
+    used: { val: 5789 },
+    onDemandCap: { val: 0 },
+    billingPeriodStart: "2026-07-01T00:00:00+00:00",
+    billingPeriodEnd: "2026-08-01T00:00:00+00:00",
+    history: [],
+  },
+};
+
 const USER_PROFILE = {
   userId: "d84768dd-224d-4052-ba49-0d336fa9160c",
   email: "user@example.com",
   hasGrokCodeAccess: true,
   subscriptionTier: null,
+};
+
+const PREMIUM_USER = {
+  userId: "68a07f6c-b5f7-4c8b-8a40-0a3b1f79dc3d",
+  email: "lanzologan@gmail.com",
+  hasGrokCodeAccess: true,
+  subscriptionTier: "XPremiumPlus",
 };
 
 describe("grok-cli registry usage flag", () => {
@@ -101,6 +139,36 @@ describe("parseGrokCliBilling", () => {
     });
     expect(parsed.plan).toBe("Super Grok");
   });
+
+  it("shows GrokBuild % remaining for subscription accounts (not fake 0% on-demand)", () => {
+    const parsed = parseGrokCliBilling(
+      SUBSCRIPTION_CREDITS,
+      SUBSCRIPTION_MONTHLY,
+      PREMIUM_USER,
+    );
+    expect(parsed.plan).toBe("X Premium Plus");
+    // Weekly credit window: 3% used → 97% remaining
+    expect(parsed.quotas.GrokBuild).toMatchObject({
+      used: 3,
+      total: 100,
+      remainingPercentage: 97,
+    });
+    // Monthly allotment: 5789 / 20000 used → ~71% remaining
+    expect(parsed.quotas.Monthly).toMatchObject({
+      used: 5789,
+      total: 20000,
+    });
+    expect(parsed.quotas.Monthly.remainingPercentage).toBeCloseTo(71.055, 1);
+    // Must NOT invent a depleted On-demand bar when real meters exist
+    expect(parsed.quotas["On-demand"]).toBeUndefined();
+    expect(parsed.exhausted).toBe(false);
+  });
+
+  it("still works with only credits payload (no monthly)", () => {
+    const parsed = parseGrokCliBilling(SUBSCRIPTION_CREDITS, PREMIUM_USER);
+    expect(parsed.quotas.GrokBuild.remainingPercentage).toBe(97);
+    expect(parsed.quotas["On-demand"]).toBeUndefined();
+  });
 });
 
 describe("getUsageForProvider(grok-cli)", () => {
@@ -111,6 +179,7 @@ describe("getUsageForProvider(grok-cli)", () => {
   it("returns normalized quotas from billing + user endpoints", async () => {
     proxyAwareFetch
       .mockResolvedValueOnce(jsonResponse(ACTIVE_BILLING))
+      .mockResolvedValueOnce(jsonResponse({ config: {} })) // monthly
       .mockResolvedValueOnce(jsonResponse(USER_PROFILE));
 
     const usage = await getUsageForProvider({
@@ -148,6 +217,7 @@ describe("getUsageForProvider(grok-cli)", () => {
   it("surfaces auth-expired message on 401", async () => {
     proxyAwareFetch
       .mockResolvedValueOnce(jsonResponse({ error: "unauthorized" }, 401))
+      .mockResolvedValueOnce(jsonResponse({ config: {} }))
       .mockResolvedValueOnce(jsonResponse(USER_PROFILE));
 
     const usage = await getUsageForProvider({
@@ -161,6 +231,7 @@ describe("getUsageForProvider(grok-cli)", () => {
   it("returns depleted on-demand bar without blocking message when cap is zero", async () => {
     proxyAwareFetch
       .mockResolvedValueOnce(jsonResponse(EXHAUSTED_BILLING))
+      .mockResolvedValueOnce(jsonResponse({ config: {} }))
       .mockResolvedValueOnce(jsonResponse(USER_PROFILE));
 
     const usage = await getUsageForProvider({
@@ -173,6 +244,33 @@ describe("getUsageForProvider(grok-cli)", () => {
     expect(usage.message).toBeUndefined();
     expect(usage.quotas["On-demand"].remainingPercentage).toBe(0);
     expect(usage.quotas["On-demand"].total).toBe(1);
+  });
+
+  it("merges credits + monthly for subscription accounts", async () => {
+    proxyAwareFetch
+      .mockResolvedValueOnce(jsonResponse(SUBSCRIPTION_CREDITS))
+      .mockResolvedValueOnce(jsonResponse(SUBSCRIPTION_MONTHLY))
+      .mockResolvedValueOnce(jsonResponse(PREMIUM_USER));
+
+    const usage = await getUsageForProvider({
+      provider: "grok-cli",
+      accessToken: "test-token",
+      providerSpecificData: {
+        email: "lanzologan@gmail.com",
+        userId: "68a07f6c-b5f7-4c8b-8a40-0a3b1f79dc3d",
+      },
+    });
+
+    expect(usage.message).toBeUndefined();
+    expect(usage.plan).toBe("X Premium Plus");
+    expect(usage.quotas.GrokBuild.remainingPercentage).toBe(97);
+    expect(usage.quotas.Monthly).toMatchObject({ used: 5789, total: 20000 });
+    expect(usage.quotas["On-demand"]).toBeUndefined();
+
+    // 3 parallel fetches: credits, monthly, user
+    expect(proxyAwareFetch).toHaveBeenCalledTimes(3);
+    expect(proxyAwareFetch.mock.calls[0][0]).toContain("format=credits");
+    expect(String(proxyAwareFetch.mock.calls[1][0])).toMatch(/\/v1\/billing$/);
   });
 });
 
@@ -198,5 +296,27 @@ describe("parseQuotaData(grok-cli)", () => {
       total: 100,
       remainingPercentage: 65,
     });
+  });
+
+  it("forwards GrokBuild + Monthly bars", () => {
+    const rows = parseQuotaData("grok-cli", {
+      plan: "XPremiumPlus",
+      quotas: {
+        GrokBuild: {
+          used: 3,
+          total: 100,
+          remainingPercentage: 97,
+          resetAt: "2026-07-21T04:00:11.065Z",
+        },
+        Monthly: {
+          used: 5789,
+          total: 20000,
+          remainingPercentage: 71.055,
+          resetAt: "2026-08-01T00:00:00.000Z",
+        },
+      },
+    });
+    expect(rows.map((r) => r.name).sort()).toEqual(["GrokBuild", "Monthly"]);
+    expect(rows.find((r) => r.name === "GrokBuild").remainingPercentage).toBe(97);
   });
 });
