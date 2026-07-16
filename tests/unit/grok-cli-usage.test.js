@@ -169,6 +169,53 @@ describe("parseGrokCliBilling", () => {
     expect(parsed.quotas.GrokBuild.remainingPercentage).toBe(97);
     expect(parsed.quotas["On-demand"]).toBeUndefined();
   });
+
+  it("synthesizes GrokBuild 100% remaining when xAI omits percent fields at 0 usage", () => {
+    // Live shape from brand-new XPremiumPlus seats (arisasativa6 / aleandsyrf 2026-07-16):
+    // credits payload has weekly window but NO creditUsagePercent / productUsage.
+    const ZERO_USAGE_CREDITS = {
+      config: {
+        currentPeriod: {
+          type: "USAGE_PERIOD_TYPE_WEEKLY",
+          start: "2026-07-16T10:05:36.244647+00:00",
+          end: "2026-07-23T10:05:36.244647+00:00",
+        },
+        onDemandCap: { val: 0 },
+        onDemandUsed: { val: 0 },
+        isUnifiedBillingUser: true,
+        prepaidBalance: { val: 0 },
+        billingPeriodStart: "2026-07-16T10:05:36.244647+00:00",
+        billingPeriodEnd: "2026-07-23T10:05:36.244647+00:00",
+      },
+    };
+    const ZERO_USAGE_MONTHLY = {
+      config: {
+        monthlyLimit: { val: 20000 },
+        used: { val: 0 },
+        onDemandCap: { val: 0 },
+        billingPeriodStart: "2026-07-01T00:00:00+00:00",
+        billingPeriodEnd: "2026-08-01T00:00:00+00:00",
+      },
+    };
+    const parsed = parseGrokCliBilling(
+      ZERO_USAGE_CREDITS,
+      ZERO_USAGE_MONTHLY,
+      PREMIUM_USER,
+    );
+    expect(parsed.plan).toBe("X Premium Plus");
+    expect(parsed.quotas.GrokBuild).toMatchObject({
+      used: 0,
+      total: 100,
+      remainingPercentage: 100,
+    });
+    expect(parsed.quotas.Monthly).toMatchObject({
+      used: 0,
+      total: 20000,
+      remainingPercentage: 100,
+    });
+    expect(parsed.quotas["On-demand"]).toBeUndefined();
+    expect(parsed.exhausted).toBe(false);
+  });
 });
 
 describe("getUsageForProvider(grok-cli)", () => {

@@ -209,6 +209,12 @@ export function parseGrokCliBilling(billing, userOrSecondBilling = null, maybeUs
 
   // 1) Weekly / window-window credit usage (format=credits)
   //    creditUsagePercent = how much of the window was used (0–100).
+  //
+  // xAI quirk (observed 2026-07-16 on brand-new XPremiumPlus seats):
+  // when weekly usage is still exactly 0, BOTH `creditUsagePercent` and
+  // `productUsage` are OMITTED from the credits payload — not sent as 0.
+  // Aged accounts that already spent something get the fields back.
+  // Without a synthetic 0% bar here, fresh premium seats only show Monthly.
   let creditUsedPercent = toFiniteNumber(config.creditUsagePercent, NaN);
   if (!Number.isFinite(creditUsedPercent) && Array.isArray(config.productUsage)) {
     const grokBuild = config.productUsage.find(
@@ -225,6 +231,29 @@ export function parseGrokCliBilling(billing, userOrSecondBilling = null, maybeUs
         (p) => p && typeof p === "object" && p.usagePercent != null,
       );
       if (first) creditUsedPercent = toFiniteNumber(first.usagePercent, NaN);
+    }
+  }
+  if (!Number.isFinite(creditUsedPercent)) {
+    const hasWeeklyWindow = !!(
+      config.currentPeriod &&
+      (config.currentPeriod.end ||
+        config.currentPeriod.start ||
+        config.currentPeriod.type)
+    );
+    const monthlyLimitHint = unwrapVal(
+      config.monthlyLimit ?? secondary.monthlyLimit ?? root.monthlyLimit,
+      NaN,
+    );
+    const hasSubTier =
+      typeof user?.subscriptionTier === "string" &&
+      user.subscriptionTier.trim().length > 0;
+    // Only synthesize for active seats (sub tier and/or monthly allotment).
+    // Exhausted free/promo (no monthly, no tier) must NOT get a fake full bar.
+    if (
+      hasWeeklyWindow &&
+      (hasSubTier || (Number.isFinite(monthlyLimitHint) && monthlyLimitHint > 0))
+    ) {
+      creditUsedPercent = 0;
     }
   }
   if (Number.isFinite(creditUsedPercent)) {
