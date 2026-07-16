@@ -48,6 +48,31 @@ const COOLDOWN = {
 };
 
 /**
+ * Request-scoped errors: fail THIS request, do NOT mark the account unavailable
+ * and do NOT cascade to the next account (same oversized payload would just burn
+ * the whole pool — observed with OpenViking → CF Workers AI 413 context-window).
+ *
+ * Checked before ERROR_RULES. Match is OR across rules (text OR status).
+ * Each rule: { text?, status? }
+ */
+export const REQUEST_SCOPED_ERROR_RULES = [
+  // Cloudflare Workers AI / providers that surface context overflow as 413
+  { status: 413 },
+  // Explicit context-window / payload-too-large messages
+  { text: "context window" },
+  { text: "context length" },
+  { text: "maximum context" },
+  { text: "estimated number of input" },
+  { text: "maximum output tokens" },
+  { text: "prompt is too long" },
+  { text: "prompt too long" },
+  { text: "request too large" },
+  { text: "payload too large" },
+  { text: "input is too long" },
+  { text: "tokens exceeded this model" },
+];
+
+/**
  * Unified error classification rules.
  * Checked top-to-bottom: text rules first (by order), then status rules.
  * Each rule: { text?, status?, cooldownMs?, backoff? }

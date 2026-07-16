@@ -1,4 +1,9 @@
-import { ERROR_RULES, BACKOFF_CONFIG, TRANSIENT_COOLDOWN_MS } from "../config/errorConfig.js";
+import {
+  ERROR_RULES,
+  REQUEST_SCOPED_ERROR_RULES,
+  BACKOFF_CONFIG,
+  TRANSIENT_COOLDOWN_MS,
+} from "../config/errorConfig.js";
 
 /**
  * Calculate exponential backoff cooldown for rate limits (429)
@@ -13,17 +18,57 @@ export function getQuotaCooldown(backoffLevel = 0) {
 }
 
 /**
+ * Normalize error payload to lowercase string for rule matching.
+ * @param {unknown} errorText
+ * @returns {string}
+ */
+function normalizeErrorText(errorText) {
+  if (!errorText) return "";
+  if (typeof errorText === "string") return errorText.toLowerCase();
+  try {
+    return JSON.stringify(errorText).toLowerCase();
+  } catch {
+    return String(errorText).toLowerCase();
+  }
+}
+
+/**
+ * Request-scoped errors (context overflow / payload too large) must fail the
+ * request itself — NOT burn the account and NOT cascade across the pool.
+ * @param {number} status
+ * @param {string} lowerError
+ * @returns {boolean}
+ */
+export function isRequestScopedError(status, errorText) {
+  const lowerError = typeof errorText === "string" && errorText === errorText.toLowerCase()
+    ? errorText
+    : normalizeErrorText(errorText);
+
+  for (const rule of REQUEST_SCOPED_ERROR_RULES) {
+    if (rule.status && rule.status === status) return true;
+    if (rule.text && lowerError && lowerError.includes(rule.text)) return true;
+  }
+  return false;
+}
+
+/**
  * Check if error should trigger account fallback (switch to next account)
- * Config-driven: matches ERROR_RULES top-to-bottom (text rules first, then status)
+ * Config-driven:
+ *   1) REQUEST_SCOPED_ERROR_RULES → shouldFallback:false (no account burn)
+ *   2) ERROR_RULES top-to-bottom (text first, then status)
+ *   3) default transient cooldown
  * @param {number} status - HTTP status code
  * @param {string} errorText - Error message text
  * @param {number} backoffLevel - Current backoff level for exponential backoff
- * @returns {{ shouldFallback: boolean, cooldownMs: number, newBackoffLevel?: number }}
+ * @returns {{ shouldFallback: boolean, cooldownMs: number, newBackoffLevel?: number, requestScoped?: boolean }}
  */
 export function checkFallbackError(status, errorText, backoffLevel = 0) {
-  const lowerError = errorText
-    ? (typeof errorText === "string" ? errorText : JSON.stringify(errorText)).toLowerCase()
-    : "";
+  const lowerError = normalizeErrorText(errorText);
+
+  // Request-scoped: return error to client, keep account healthy
+  if (isRequestScopedError(status, lowerError)) {
+    return { shouldFallback: false, cooldownMs: 0, requestScoped: true };
+  }
 
   for (const rule of ERROR_RULES) {
     // Text-based rule: match substring in error message

@@ -214,13 +214,13 @@ export async function markAccountUnavailable(connectionId, status, errorText, pr
   const backoffLevel = conn?.backoffLevel || 0;
 
   // Provider-specific precise cooldown (e.g. codex usage_limit_reached resets_at) overrides backoff
-  let shouldFallback, cooldownMs, newBackoffLevel;
+  let shouldFallback, cooldownMs, newBackoffLevel, requestScoped;
   if (resetsAtMs && resetsAtMs > Date.now()) {
     shouldFallback = true;
     cooldownMs = Math.min(resetsAtMs - Date.now(), MAX_RATE_LIMIT_COOLDOWN_MS);
     newBackoffLevel = 0;
   } else {
-    ({ shouldFallback, cooldownMs, newBackoffLevel } = checkFallbackError(status, errorText, backoffLevel));
+    ({ shouldFallback, cooldownMs, newBackoffLevel, requestScoped } = checkFallbackError(status, errorText, backoffLevel));
     // Per-provider custom quota cooldown: override backoff with a fixed duration when enabled.
     // Scoped to quota/rate errors (402/429/backoff rules) so transient 5xx/timeout keep short defaults.
     if (shouldFallback && provider) {
@@ -235,7 +235,18 @@ export async function markAccountUnavailable(connectionId, status, errorText, pr
       } catch { /* fail-open: keep computed cooldown */ }
     }
   }
-  if (!shouldFallback) return { shouldFallback: false, cooldownMs: 0 };
+  // Request-scoped (413 / context window / payload too large): do NOT mark account
+  // unavailable and do NOT cascade — same body would just burn the whole pool.
+  if (!shouldFallback) {
+    if (requestScoped) {
+      const connName = conn?.displayName || conn?.name || conn?.email || connectionId.slice(0, 8);
+      log.warn("AUTH", `${connName} request-scoped error [${status}] — not marking account unavailable`);
+      if (provider && status) {
+        console.error(`⚠️ ${provider} [${status}] request-scoped (no account burn): ${typeof errorText === "string" ? errorText.slice(0, 120) : "payload/context overflow"}`);
+      }
+    }
+    return { shouldFallback: false, cooldownMs: 0, requestScoped: !!requestScoped };
+  }
 
   const reason = typeof errorText === "string" ? errorText.slice(0, 100) : "Provider error";
   const lockUpdate = buildModelLockUpdate(model, cooldownMs);

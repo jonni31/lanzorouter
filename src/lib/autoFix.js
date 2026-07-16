@@ -20,6 +20,28 @@ import { getSettings } from "./db/repos/settingsRepo.js";
 export function detectErrorPattern(status, error, provider) {
   const errorLower = (error || "").toLowerCase();
 
+  // Request-scoped: context/payload too large — fail the request, do NOT treat as
+  // quota/account death (would cascade-burn CF pool when OV sends oversized VLM body).
+  if (
+    status === 413 ||
+    errorLower.includes("context window") ||
+    errorLower.includes("context length") ||
+    errorLower.includes("estimated number of input") ||
+    errorLower.includes("prompt is too long") ||
+    errorLower.includes("prompt too long") ||
+    errorLower.includes("payload too large") ||
+    errorLower.includes("request too large") ||
+    errorLower.includes("tokens exceeded this model")
+  ) {
+    return {
+      type: "request_scoped",
+      action: "skip",
+      retryable: false,
+      waitMs: 0,
+      description: "Request too large / context window exceeded — fail request, keep account"
+    };
+  }
+
   // Rate limit (429 or error message contains "rate limit") — fixable by waiting
   if (status === 429 || errorLower.includes("rate limit") || errorLower.includes("too many requests") || errorLower.includes("high-frequency") || errorLower.includes("non-compliant")) {
     // Check if 429 actually means credits exhausted (not a real rate limit)
@@ -75,9 +97,11 @@ export function detectErrorPattern(status, error, provider) {
   }
 
   // Quota/credit errors — NOT fixable, skip and let Auto-clean handle
-  if (status === 402 || errorLower.includes("quota") || errorLower.includes("exceeded") ||
+  // Note: bare "exceeded" is intentionally NOT matched here (context-window false positive).
+  if (status === 402 || errorLower.includes("quota") ||
       errorLower.includes("exhausted") || errorLower.includes("insufficient") ||
-      errorLower.includes("payment required") || errorLower.includes("billing")) {
+      errorLower.includes("payment required") || errorLower.includes("billing") ||
+      errorLower.includes("quota exceeded") || errorLower.includes("credits exceeded")) {
     return {
       type: "quota_exhausted",
       action: "skip",
